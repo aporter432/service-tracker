@@ -52,3 +52,32 @@ exports/
 # Backups
 *.backup
 *.bak
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Docker
+docker-compose.override.yml
+.docker/
+
+# CI/CD
+*.sarif
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.pytest_cache/
+
+# Security scans
+bandit-report.json
+safety-report.json
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/

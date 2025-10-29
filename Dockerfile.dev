@@ -1,0 +1,34 @@
+# Development Dockerfile with hot-reload support
+FROM python:3.10-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    FLASK_ENV=development \
+    FLASK_DEBUG=1
+
+# Install system dependencies including debugger support
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy requirements
+COPY requirements.txt .
+
+# Install Python dependencies with dev tools
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt && \
+    pip install debugpy pytest pytest-cov ipython
+
+# Copy application code
+COPY . .
+
+# Create data directories
+RUN mkdir -p /app/data/logs /app/data/inbox1 /app/data/inbox2
+
+EXPOSE 5000 5678
+
+# Run with auto-reload
+CMD ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "orbcomm_dashboard.py"]

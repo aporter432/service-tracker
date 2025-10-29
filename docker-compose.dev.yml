@@ -1,0 +1,38 @@
+version: '3.8'
+
+# Development environment with hot-reload and debugging
+services:
+  orbcomm-tracker-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: orbcomm-tracker:dev
+    container_name: orbcomm-tracker-dev
+    ports:
+      - "5000:5000"
+      - "5678:5678"  # Debugger port
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - ORBCOMM_DATA_DIR=/app/data
+      - DATABASE_PATH=/app/data/tracker.db
+      - LOG_LEVEL=DEBUG
+    volumes:
+      # Mount source code for hot reload
+      - .:/app
+      - orbcomm-data-dev:/app/data
+      - ${HOME}/.orbcomm:/app/data:ro
+    command: ["python", "orbcomm_dashboard.py"]
+    restart: unless-stopped
+    networks:
+      - orbcomm-network-dev
+    stdin_open: true
+    tty: true
+
+networks:
+  orbcomm-network-dev:
+    driver: bridge
+
+volumes:
+  orbcomm-data-dev:
+    driver: local

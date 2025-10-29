@@ -1,0 +1,81 @@
+{
+  "name": "ORBCOMM Service Tracker",
+  "description": "Email notification monitoring and analytics for ORBCOMM services",
+  "repository": "https://github.com/aporter432/service-tracker",
+  "keywords": [
+    "email",
+    "monitoring",
+    "analytics",
+    "orbcomm",
+    "flask"
+  ],
+  "website": "https://github.com/aporter432/service-tracker",
+  "success_url": "/",
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    },
+    "worker": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "env": {
+    "FLASK_ENV": {
+      "description": "Flask environment (production for Heroku)",
+      "value": "production",
+      "required": true
+    },
+    "SECRET_KEY": {
+      "description": "Secret key for Flask sessions",
+      "generator": "secret",
+      "required": true
+    },
+    "LOG_LEVEL": {
+      "description": "Application log level",
+      "value": "INFO",
+      "required": false
+    },
+    "ORBCOMM_DATA_DIR": {
+      "description": "Data directory path",
+      "value": "/app/data",
+      "required": true
+    },
+    "DATABASE_PATH": {
+      "description": "SQLite database path",
+      "value": "/app/data/tracker.db",
+      "required": true
+    },
+    "CORS_ENABLED": {
+      "description": "Enable CORS",
+      "value": "true",
+      "required": false
+    },
+    "RATELIMIT_ENABLED": {
+      "description": "Enable rate limiting",
+      "value": "true",
+      "required": false
+    },
+    "METRICS_ENABLED": {
+      "description": "Enable Prometheus metrics",
+      "value": "true",
+      "required": false
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:mini",
+      "as": "DATABASE"
+    },
+    {
+      "plan": "heroku-redis:mini",
+      "as": "REDIS"
+    }
+  ]
+}
