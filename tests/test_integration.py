@@ -35,30 +35,37 @@ class TestDatabaseIntegration:
 
     def test_notification_lifecycle(self, temp_db):
         """Test complete notification lifecycle"""
-        # Store notification
+        # Store notification with all required fields
         notification_data = {
             'reference_number': 'S123456',
-            'subject': 'Test Subject',
+            'gmail_message_id': 'test_msg_id_123456',
+            'event_type': 'Service Interruption',
+            'summary': 'Test notification summary',
+            'raw_email_subject': 'Test Subject',
             'date_received': '2025-01-01 10:00:00',
             'status': 'Open',
-            'platform': 'Test Platform',
-            'email_body': 'Test body',
+            'platform': 'IDP',
+            'raw_email_body': 'Test body',
             'inbox_source': 'test_inbox'
         }
 
-        result = temp_db.store_notification(notification_data)
-        assert result == 'stored'
+        result = temp_db.insert_notification(notification_data)
+        assert result is not None  # Returns integer ID on success
 
         # Get notification
         notifications = temp_db.get_all_notifications()
         assert len(notifications) == 1
         assert notifications[0]['reference_number'] == 'S123456'
 
-        # Update status
+        # Insert resolved notification with unique gmail_message_id
         resolved_data = notification_data.copy()
+        resolved_data['gmail_message_id'] = 'test_msg_id_123456_resolved'
         resolved_data['status'] = 'Resolved'
-        result = temp_db.store_notification(resolved_data)
-        assert result == 'stored'
+        result = temp_db.insert_notification(resolved_data)
+        assert result is not None  # Returns integer ID on success
+
+        # Link the pair
+        temp_db.link_notification_pair('S123456')
 
         # Check pairing
         pairs = temp_db.get_notification_pairs()
@@ -66,15 +73,18 @@ class TestDatabaseIntegration:
 
     def test_stats_calculation(self, temp_db):
         """Test statistics calculation"""
-        # Add test data
+        # Add test data with all required fields
         for i in range(5):
-            temp_db.store_notification({
+            temp_db.insert_notification({
                 'reference_number': f'S{i:06d}',
-                'subject': f'Test {i}',
+                'gmail_message_id': f'test_msg_id_{i}',
+                'event_type': 'Service Interruption',
+                'summary': f'Test notification {i}',
+                'raw_email_subject': f'Test {i}',
                 'date_received': '2025-01-01 10:00:00',
                 'status': 'Open' if i % 2 == 0 else 'Resolved',
-                'platform': 'Test',
-                'email_body': 'Test',
+                'platform': 'IDP',
+                'raw_email_body': 'Test',
                 'inbox_source': 'test'
             })
 
@@ -85,15 +95,16 @@ class TestDatabaseIntegration:
 
     def test_sync_history(self, temp_db):
         """Test sync history tracking"""
-        # Record sync
-        temp_db.record_sync_start('test_inbox')
-        sync_id = temp_db.get_last_sync_id('test_inbox')
+        # Record sync - log_sync_start returns the sync_id
+        sync_id = temp_db.log_sync_start('test_inbox')
+        assert sync_id is not None
 
-        temp_db.record_sync_complete(
+        temp_db.log_sync_complete(
             sync_id=sync_id,
             emails_fetched=10,
             emails_parsed=10,
-            emails_stored=10
+            errors_count=0,
+            status='success'
         )
 
         # Get history
@@ -103,14 +114,17 @@ class TestDatabaseIntegration:
 
     def test_archiving(self, temp_db):
         """Test notification archiving"""
-        # Add old notification
-        temp_db.store_notification({
+        # Add old notification with all required fields
+        temp_db.insert_notification({
             'reference_number': 'OLD001',
-            'subject': 'Old notification',
+            'gmail_message_id': 'test_old_msg_001',
+            'event_type': 'Service Interruption',
+            'summary': 'Old notification',
+            'raw_email_subject': 'Old notification',
             'date_received': '2024-01-01 10:00:00',
             'status': 'Resolved',
-            'platform': 'Test',
-            'email_body': 'Old',
+            'platform': 'IDP',
+            'raw_email_body': 'Old',
             'inbox_source': 'test'
         })
 
@@ -258,7 +272,8 @@ class TestFlaskEndpoints:
         response = client.get('/api/stats')
         assert response.status_code == 200
         data = response.get_json()
-        assert 'total_notifications' in data
+        assert 'stats' in data
+        assert 'total_notifications' in data['stats']
 
 
 if __name__ == '__main__':

@@ -183,6 +183,14 @@ class Database:
             self.conn.commit()
             logger.info("Migration complete: incident_duration_minutes added to notification_pairs")
 
+    def create_tables(self):
+        """
+        Public method to create database tables.
+        Called by tests to explicitly initialize schema.
+        This is safe to call multiple times (CREATE TABLE IF NOT EXISTS).
+        """
+        self._initialize_schema()
+
     # ==================== Notification Operations ====================
 
     def insert_notification(self, data: Dict) -> Optional[int]:
@@ -357,6 +365,15 @@ class Database:
         except Exception as e:
             logger.error(f"Error linking pair {reference_number}: {e}")
             return False
+
+    def get_notification_pairs(self) -> List[Dict]:
+        """Get all notification pairs"""
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            SELECT * FROM notification_pairs
+            ORDER BY id DESC
+        ''')
+        return [dict(row) for row in cursor.fetchall()]
 
     # ==================== Stats Operations ====================
 
