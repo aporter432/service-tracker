@@ -51,11 +51,22 @@ WORKDIR /app
 # Copy application code
 COPY --chown=orbcomm:orbcomm . .
 
+# Copy database backup and init script
+COPY --chown=orbcomm:orbcomm database_backup.sql /app/database_backup.sql
+COPY --chown=orbcomm:orbcomm init_database.sh /app/init_database.sh
+
+# Install sqlite3 for database initialization
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends sqlite3 && \
+    rm -rf /var/lib/apt/lists/* && \
+    chmod +x /app/init_database.sh && \
+    chown orbcomm:orbcomm /app/init_database.sh /app/database_backup.sql
+
 # Switch to non-root user
 USER orbcomm
 
 # Create necessary directories
-RUN mkdir -p /app/data/logs /app/data/inbox1 /app/data/inbox2
+RUN mkdir -p /app/data/logs /app/data/inbox1 /app/data/inbox2 /home/orbcomm/.orbcomm
 
 # Expose port
 EXPOSE 5000
@@ -64,5 +75,5 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:5000/health')" || exit 1
 
-# Run with gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--worker-class", "gevent", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "orbcomm_dashboard:app"]
+# Initialize database and run gunicorn
+CMD ["/bin/bash", "-c", "/app/init_database.sh && gunicorn --bind 0.0.0.0:5000 --workers 4 --worker-class gevent --timeout 120 --access-logfile - --error-logfile - orbcomm_dashboard:app"]
