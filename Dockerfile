@@ -75,5 +75,5 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:5000/health')" || exit 1
 
-# Initialize database and run gunicorn
-CMD ["/bin/bash", "-c", "/app/init_database.sh && gunicorn --bind 0.0.0.0:5000 --workers 4 --worker-class gevent --timeout 120 --access-logfile - --error-logfile - orbcomm_dashboard:app"]
+# Initialize database, load credentials, and run gunicorn
+CMD ["/bin/bash", "-c", "/app/init_database.sh && python /app/load_credentials.py && gunicorn --bind 0.0.0.0:5000 --workers 4 --worker-class gevent --timeout 120 --access-logfile - --error-logfile - orbcomm_dashboard:app"]
