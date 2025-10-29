@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - ORBCOMM Tracker{% endblock %}
+
+{% block content %}
+<div class="notifications-page">
+    <div class="page-header">
+        <h2>Notifications ({{ notifications|length }})</h2>
+        <a href="{{ url_for('export_csv', status=status_filter, archived='yes' if include_archived else 'no') }}" class="btn btn-secondary">Export CSV</a>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+        <form method="get" action="{{ url_for('notifications') }}">
+            <div class="filter-group">
+                <label>Status:</label>
+                <select name="status" onchange="this.form.submit()">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+                    <option value="Open" {% if status_filter == 'Open' %}selected{% endif %}>Open</option>
+                    <option value="Resolved" {% if status_filter == 'Resolved' %}selected{% endif %}>Resolved</option>
+                    <option value="Continuing" {% if status_filter == 'Continuing' %}selected{% endif %}>Continuing</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Platform:</label>
+                <select name="platform" onchange="this.form.submit()">
+                    <option value="all" {% if platform_filter == 'all' %}selected{% endif %}>All</option>
+                    <option value="IDP" {% if platform_filter == 'IDP' %}selected{% endif %}>IDP</option>
+                    <option value="OGx" {% if platform_filter == 'OGx' %}selected{% endif %}>OGx</option>
+                    <option value="OGWS" {% if platform_filter == 'OGWS' %}selected{% endif %}>OGWS</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>
+                    <input type="checkbox" name="archived" value="yes" {% if include_archived %}checked{% endif %} onchange="this.form.submit()">
+                    Include Archived
+                </label>
+            </div>
+        </form>
+    </div>
+
+    <!-- Notifications List -->
+    {% if notifications %}
+    <div class="notification-list">
+        {% for notif in notifications %}
+        <div class="notification-item">
+            <div class="notif-header">
+                <span class="ref-number">{{ notif.reference_number }}</span>
+                <span class="badge badge-{{ notif.platform|lower }}">{{ notif.platform }}</span>
+                <span class="badge badge-{{ notif.status|lower }}">{{ notif.status }}</span>
+                {% if notif.is_archived %}
+                <span class="badge badge-archived">Archived</span>
+                {% endif %}
+            </div>
+            <div class="notif-summary">{{ notif.summary[:200] }}{% if notif.summary|length > 200 %}...{% endif %}</div>
+            <div class="notif-meta">
+                <span><strong>Event:</strong> {{ notif.event_type }}</span> |
+                <span><strong>Date:</strong> {{ notif.date_received|format_date }}</span>
+                {% if notif.time_to_resolve_minutes %}
+                | <span><strong>Resolution:</strong> {{ notif.time_to_resolve_minutes|format_duration }}</span>
+                {% endif %}
+                <a href="{{ url_for('notification_detail', notif_id=notif.id) }}" class="link">View Details →</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted">No notifications found with the selected filters.</p>
+    {% endif %}
+
+    <!-- Stats Sidebar -->
+    <div class="sidebar">
+        <h3>Quick Stats</h3>
+        <div class="sidebar-stat">
+            <span class="label">Total:</span>
+            <span class="value">{{ stats.total_notifications }}</span>
+        </div>
+        <div class="sidebar-stat">
+            <span class="label">Open:</span>
+            <span class="value">{{ stats.open_count }}</span>
+        </div>
+        <div class="sidebar-stat">
+            <span class="label">Resolved:</span>
+            <span class="value">{{ stats.resolved_count }}</span>
+        </div>
+        <div class="sidebar-stat">
+            <span class="label">Avg Resolution:</span>
+            <span class="value">{{ stats.avg_resolution_time_minutes|format_duration }}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

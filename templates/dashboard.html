@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - ORBCOMM Tracker{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="page-header">
+        <h2>Dashboard</h2>
+        <button onclick="triggerSync()" class="btn btn-primary" id="syncBtn">
+            <span id="syncText">Sync Now</span>
+        </button>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Notifications</h3>
+            <div class="stat-value">{{ stats.total_notifications }}</div>
+        </div>
+        <div class="stat-card open">
+            <h3>Open Issues</h3>
+            <div class="stat-value">{{ stats.open_count }}</div>
+        </div>
+        <div class="stat-card resolved">
+            <h3>Resolved</h3>
+            <div class="stat-value">{{ stats.resolved_count }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Avg Email Processing</h3>
+            <div class="stat-value">{{ stats.avg_resolution_time_minutes|format_duration }}</div>
+            <div class="stat-subtitle">Time from open to resolved notification</div>
+        </div>
+        <div class="stat-card">
+            <h3>Avg Incident Duration</h3>
+            <div class="stat-value">{{ stats.avg_incident_duration_minutes|format_duration }}</div>
+            <div class="stat-subtitle">Actual outage time from resolved emails</div>
+        </div>
+    </div>
+
+    <!-- Network Breakdown -->
+    <div class="section">
+        <h3>Network Incident Statistics</h3>
+        {% if stats.platform_incident_stats %}
+        <div class="stats-grid">
+            {% for platform, data in stats.platform_incident_stats.items() %}
+            <div class="stat-card">
+                <h3>{{ platform }}</h3>
+                <div class="stat-value">{{ data.count }} incidents</div>
+                <div class="stat-subtitle">Avg: {{ data.avg_duration|format_duration }}</div>
+                <div class="stat-subtitle">Total: {{ data.total_duration|format_duration }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">No incident duration data available yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- Open Issues -->
+    <div class="section">
+        <h3>Open Issues ({{ open_notifications|length }})</h3>
+        {% if open_notifications %}
+        <div class="notification-list">
+            {% for notif in open_notifications[:10] %}
+            <div class="notification-item">
+                <div class="notif-header">
+                    <span class="ref-number">{{ notif.reference_number }}</span>
+                    <span class="badge badge-{{ notif.platform|lower }}">{{ notif.platform }}</span>
+                    <span class="badge badge-open">{{ notif.status }}</span>
+                </div>
+                <div class="notif-summary">{{ notif.summary[:150] }}{% if notif.summary|length > 150 %}...{% endif %}</div>
+                <div class="notif-meta">
+                    <span>{{ notif.event_type }}</span> |
+                    <span>{{ notif.date_received|format_date }}</span>
+                    <a href="{{ url_for('notification_detail', notif_id=notif.id) }}" class="link">View Details →</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% if open_notifications|length > 10 %}
+        <p class="text-center"><a href="{{ url_for('notifications', status='Open') }}" class="link">View all {{ open_notifications|length }} open issues →</a></p>
+        {% endif %}
+        {% else %}
+        <p class="text-muted">No open issues! 🎉</p>
+        {% endif %}
+    </div>
+
+    <!-- Recent Notifications -->
+    <div class="section">
+        <h3>Recent Notifications</h3>
+        <div class="notification-list">
+            {% for notif in notifications[:5] %}
+            <div class="notification-item">
+                <div class="notif-header">
+                    <span class="ref-number">{{ notif.reference_number }}</span>
+                    <span class="badge badge-{{ notif.platform|lower }}">{{ notif.platform }}</span>
+                    <span class="badge badge-{{ notif.status|lower }}">{{ notif.status }}</span>
+                </div>
+                <div class="notif-summary">{{ notif.summary[:150] }}{% if notif.summary|length > 150 %}...{% endif %}</div>
+                <div class="notif-meta">
+                    <span>{{ notif.event_type }}</span> |
+                    <span>{{ notif.date_received|format_date }}</span>
+                    <a href="{{ url_for('notification_detail', notif_id=notif.id) }}" class="link">View Details →</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <p class="text-center"><a href="{{ url_for('notifications') }}" class="link">View all notifications →</a></p>
+    </div>
+
+    <!-- Sync Status -->
+    <div class="section">
+        <h3>Sync Status</h3>
+        <p><strong>Last Sync:</strong> {% if last_sync %}{{ last_sync.strftime('%b %d, %Y %H:%M') }}{% else %}Never{% endif %}</p>
+        <p><strong>Next Scheduled Sync:</strong> Tomorrow at 9:00 AM</p>
+
+        {% if sync_history %}
+        <h4>Recent Sync History</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Fetched</th>
+                    <th>Parsed</th>
+                    <th>Errors</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sync in sync_history %}
+                <tr>
+                    <td>{{ sync.sync_start|format_date }}</td>
+                    <td><span class="badge badge-{{ sync.status }}">{{ sync.status }}</span></td>
+                    <td>{{ sync.emails_fetched }}</td>
+                    <td>{{ sync.emails_parsed }}</td>
+                    <td>{{ sync.errors_count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+</div>
+
+<div id="syncResult" class="alert" style="display:none;"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function triggerSync() {
+    const btn = document.getElementById('syncBtn');
+    const text = document.getElementById('syncText');
+    const result = document.getElementById('syncResult');
+
+    btn.disabled = true;
+    text.textContent = 'Syncing...';
+
+    fetch('/api/sync', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                result.className = 'alert alert-success';
+                result.textContent = `Sync complete! Fetched: ${data.result.emails_fetched}, Stored: ${data.result.emails_stored}`;
+                result.style.display = 'block';
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                result.className = 'alert alert-error';
+                result.textContent = `Sync failed: ${data.error}`;
+                result.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            result.className = 'alert alert-error';
+            result.textContent = `Error: ${error.message}`;
+            result.style.display = 'block';
+        })
+        .finally(() => {
+            btn.disabled = false;
+            text.textContent = 'Sync Now';
+        });
+}
+</script>
+{% endblock %}

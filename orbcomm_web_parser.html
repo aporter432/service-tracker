@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORBCOMM Email Parser - Web Version</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #1F4E78;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .input-section, .output-section {
+            margin-bottom: 30px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .parse-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .parse-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .clear-btn {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .clear-btn:hover {
+            background: #e0e0e0;
+        }
+        .copy-btn {
+            background: #28a745;
+            color: white;
+        }
+        .copy-btn:hover {
+            background: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background: #1F4E78;
+            color: white;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .status-open {
+            background-color: #ffe5e5;
+        }
+        .status-resolved {
+            background-color: #e5ffe5;
+        }
+        .status-continuing {
+            background-color: #fffbe5;
+        }
+        .results-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1F4E78;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        .example-text {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 12px;
+            color: #666;
+        }
+        .notification {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .notification.success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛰️ ORBCOMM Notification Parser</h1>
+        <p class="subtitle">Paste your ORBCOMM email content below to extract structured data</p>
+        
+        <div class="input-section">
+            <label for="email-subject">Email Subject Line (Optional):</label>
+            <input type="text" id="email-subject" placeholder="e.g., ORBCOMM Service Notification: IDP-Maintenance (Reference#: M-003147)-Open" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 15px;">
+            
+            <label for="email-input">Email Body:</label>
+            <textarea id="email-input" rows="10" placeholder="Paste your ORBCOMM notification email content here...
+
+Example:
+Platform: IDP
+Event: Maintenance
+Summary: Dear ORBCOMM Partner, We will be conducting scheduled maintenance..."></textarea>
+            
+            <div class="example-text">
+                💡 Tip: You can paste multiple emails separated by "---" to process them all at once
+            </div>
+            
+            <div class="button-group">
+                <button class="parse-btn" onclick="parseEmail()">🔍 Parse Email</button>
+                <button class="clear-btn" onclick="clearAll()">🗑️ Clear All</button>
+                <button class="parse-btn" onclick="addSampleData()">📝 Load Sample</button>
+            </div>
+        </div>
+        
+        <div id="notification-area"></div>
+        
+        <div class="output-section" id="output-section" style="display: none;">
+            <h2>📊 Parsed Results</h2>
+            
+            <div class="stats" id="stats">
+                <!-- Stats will be inserted here -->
+            </div>
+            
+            <div class="results-container">
+                <table id="results-table">
+                    <thead>
+                        <tr>
+                            <th>Reference #</th>
+                            <th>Date</th>
+                            <th>Platform</th>
+                            <th>Event Type</th>
+                            <th>Status</th>
+                            <th>Scheduled</th>
+                            <th>Duration</th>
+                            <th>Services</th>
+                            <th>Summary</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-body">
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="button-group">
+                <button class="copy-btn" onclick="copyAsCSV()">📋 Copy as CSV</button>
+                <button class="copy-btn" onclick="copyAsExcel()">📊 Copy for Excel</button>
+                <button class="copy-btn" onclick="downloadCSV()">💾 Download CSV</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let parsedData = [];
+
+        function parseEmail() {
+            const subject = document.getElementById('email-subject').value.trim();
+            const body = document.getElementById('email-input').value.trim();
+            
+            if (!body) {
+                showNotification('Please paste email content first!', 'error');
+                return;
+            }
+            
+            // Split by --- to handle multiple emails
+            const emails = body.split('---').filter(e => e.trim());
+            parsedData = [];
+            
+            emails.forEach(emailText => {
+                const parsed = parseNotificationText(emailText, subject);
+                parsedData.push(parsed);
+            });
+            
+            displayResults();
+            showNotification(`Successfully parsed ${parsedData.length} notification(s)!`, 'success');
+        }
+        
+        function parseNotificationText(text, subject) {
+            const result = {
+                reference_number: '',
+                date_received: new Date().toISOString().split('T')[0],
+                platform: '',
+                event_type: '',
+                status: 'Open',
+                scheduled_date: '',
+                scheduled_time: '',
+                duration: '',
+                affected_services: '',
+                summary: ''
+            };
+            
+            // Parse subject if provided
+            if (subject) {
+                // Extract reference number
+                const refMatch = subject.match(/([A-Z]-\d{6})/);
+                if (refMatch) result.reference_number = refMatch[1];
+                
+                // Extract status
+                if (subject.toLowerCase().includes('resolved')) result.status = 'Resolved';
+                else if (subject.toLowerCase().includes('continuing')) result.status = 'Continuing';
+                else if (subject.toLowerCase().includes('open')) result.status = 'Open';
+                
+                // Extract platform from subject
+                if (subject.includes('IDP')) result.platform = 'IDP';
+                else if (subject.includes('OGx') || subject.includes('OGX')) result.platform = 'OGx';
+                else if (subject.includes('OGWS')) result.platform = 'OGWS';
+            }
+            
+            // Parse body
+            const lines = text.split('\n');
+            let summaryStarted = false;
+            let summaryText = '';
+            
+            lines.forEach(line => {
+                line = line.trim();
+                
+                if (line.toLowerCase().startsWith('platform:')) {
+                    result.platform = line.split(':')[1].trim();
+                } else if (line.toLowerCase().startsWith('event:')) {
+                    result.event_type = line.split(':')[1].trim();
+                } else if (line.toLowerCase().startsWith('summary:')) {
+                    summaryStarted = true;
+                    summaryText = line.substring(8).trim();
+                } else if (summaryStarted) {
+                    summaryText += ' ' + line;
+                }
+            });
+            
+            result.summary = summaryText.trim();
+            
+            // Extract dates and times from summary
+            const dateMatch = summaryText.match(/(\w+\s+\d{1,2}(?:st|nd|rd|th)?)/);
+            if (dateMatch) result.scheduled_date = dateMatch[1];
+            
+            const timeMatch = summaryText.match(/(\d{1,2}:\d{2}\s*(?:UTC|GMT|EST|PST|AM|PM)?)/);
+            if (timeMatch) result.scheduled_time = timeMatch[1];
+            
+            const durationMatch = summaryText.match(/(?:last|duration|take|approximately)\s+(\d+)\s+(hour|minute|day)s?/i);
+            if (durationMatch) result.duration = `${durationMatch[1]} ${durationMatch[2]}(s)`;
+            
+            // Extract affected services
+            const services = [];
+            const serviceKeywords = ['Partner-Support', 'VAPP', 'OGWS', 'Gateway', 'API', 'Portal', 'satellite', 'modem'];
+            serviceKeywords.forEach(keyword => {
+                if (summaryText.toLowerCase().includes(keyword.toLowerCase())) {
+                    services.push(keyword);
+                }
+            });
+            result.affected_services = services.join('; ');
+            
+            return result;
+        }
+        
+        function displayResults() {
+            const outputSection = document.getElementById('output-section');
+            const tbody = document.getElementById('results-body');
+            const statsDiv = document.getElementById('stats');
+            
+            // Clear previous results
+            tbody.innerHTML = '';
+            statsDiv.innerHTML = '';
+            
+            // Display stats
+            const stats = calculateStats();
+            statsDiv.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${stats.total}</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.open}</div>
+                    <div class="stat-label">Open</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.resolved}</div>
+                    <div class="stat-label">Resolved</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.platforms.join(', ')}</div>
+                    <div class="stat-label">Platforms</div>
+                </div>
+            `;
+            
+            // Display results in table
+            parsedData.forEach(data => {
+                const row = tbody.insertRow();
+                row.className = `status-${data.status.toLowerCase()}`;
+                
+                row.insertCell(0).textContent = data.reference_number;
+                row.insertCell(1).textContent = data.date_received;
+                row.insertCell(2).textContent = data.platform;
+                row.insertCell(3).textContent = data.event_type;
+                row.insertCell(4).textContent = data.status;
+                row.insertCell(5).textContent = `${data.scheduled_date} ${data.scheduled_time}`.trim();
+                row.insertCell(6).textContent = data.duration;
+                row.insertCell(7).textContent = data.affected_services;
+                row.insertCell(8).textContent = data.summary.substring(0, 100) + (data.summary.length > 100 ? '...' : '');
+            });
+            
+            outputSection.style.display = 'block';
+        }
+        
+        function calculateStats() {
+            return {
+                total: parsedData.length,
+                open: parsedData.filter(d => d.status === 'Open').length,
+                resolved: parsedData.filter(d => d.status === 'Resolved').length,
+                platforms: [...new Set(parsedData.map(d => d.platform).filter(p => p))]
+            };
+        }
+        
+        function copyAsCSV() {
+            const headers = ['Reference #', 'Date', 'Platform', 'Event Type', 'Status', 'Scheduled Date', 'Scheduled Time', 'Duration', 'Services', 'Summary'];
+            let csv = headers.join(',') + '\n';
+            
+            parsedData.forEach(data => {
+                csv += `"${data.reference_number}","${data.date_received}","${data.platform}","${data.event_type}","${data.status}","${data.scheduled_date}","${data.scheduled_time}","${data.duration}","${data.affected_services}","${data.summary.replace(/"/g, '""')}"\n`;
+            });
+            
+            navigator.clipboard.writeText(csv);
+            showNotification('CSV data copied to clipboard!', 'success');
+        }
+        
+        function copyAsExcel() {
+            const headers = ['Reference #', 'Date', 'Time', 'Platform', 'Event Type', 'Status', 'Priority', 'Summary', 'Scheduled Date', 'Scheduled Time', 'Duration', 'Services'];
+            let excelData = headers.join('\t') + '\n';
+            
+            parsedData.forEach(data => {
+                const priority = data.event_type.includes('Performance') ? 'High' : 'Medium';
+                excelData += `${data.reference_number}\t${data.date_received}\t\t${data.platform}\t${data.event_type}\t${data.status}\t${priority}\t${data.summary}\t${data.scheduled_date}\t${data.scheduled_time}\t${data.duration}\t${data.affected_services}\n`;
+            });
+            
+            navigator.clipboard.writeText(excelData);
+            showNotification('Data copied! Paste directly into Excel.', 'success');
+        }
+        
+        function downloadCSV() {
+            const headers = ['Reference #', 'Date', 'Platform', 'Event Type', 'Status', 'Scheduled Date', 'Scheduled Time', 'Duration', 'Services', 'Summary'];
+            let csv = headers.join(',') + '\n';
+            
+            parsedData.forEach(data => {
+                csv += `"${data.reference_number}","${data.date_received}","${data.platform}","${data.event_type}","${data.status}","${data.scheduled_date}","${data.scheduled_time}","${data.duration}","${data.affected_services}","${data.summary.replace(/"/g, '""')}"\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `orbcomm_notifications_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+        
+        function clearAll() {
+            document.getElementById('email-subject').value = '';
+            document.getElementById('email-input').value = '';
+            document.getElementById('output-section').style.display = 'none';
+            parsedData = [];
+            document.getElementById('notification-area').innerHTML = '';
+        }
+        
+        function addSampleData() {
+            document.getElementById('email-subject').value = 'ORBCOMM Service Notification: IDP-Maintenance (Reference#: M-003147)-Open';
+            document.getElementById('email-input').value = `Platform: IDP
+Event: Maintenance
+Summary: Dear ORBCOMM Partner, We will be conducting scheduled maintenance of the Partner-Support page and VAPP interface on November 5th at 15:00 UTC. The maintenance window is expected to last 1 hour. The Partner-Support page and VAPP interface may be temporarily inaccessible within the scheduled maintenance window. We will send out a reminder notice upon completion.
+
+---
+
+Platform: IDP
+Event: System Performance
+Summary: Dear ORBCOMM Partner, We are currently experiencing system performance degradation affecting IDP services. Our team is investigating the issue. Expected resolution time is 2 hours.`;
+        }
+        
+        function showNotification(message, type) {
+            const notificationArea = document.getElementById('notification-area');
+            notificationArea.innerHTML = `<div class="notification ${type}">${message}</div>`;
+            setTimeout(() => {
+                notificationArea.innerHTML = '';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

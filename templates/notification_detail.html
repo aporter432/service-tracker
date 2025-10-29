@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}{{ notification.reference_number }} - ORBCOMM Tracker{% endblock %}
+
+{% block content %}
+<div class="notification-detail">
+    <div class="page-header">
+        <h2>{{ notification.reference_number }}</h2>
+        <a href="{{ url_for('notifications') }}" class="btn btn-secondary">← Back to List</a>
+    </div>
+
+    <div class="detail-card">
+        <div class="detail-header">
+            <span class="badge badge-{{ notification.platform|lower }}">{{ notification.platform }}</span>
+            <span class="badge badge-{{ notification.status|lower }}">{{ notification.status }}</span>
+            {% if notification.is_archived %}
+            <span class="badge badge-archived">Archived</span>
+            {% endif %}
+        </div>
+
+        {% if has_been_resolved and notification.status in ['Open', 'Continuing'] %}
+        <div class="alert alert-success">
+            <strong>✅ Issue Resolved:</strong> This reference number ({{ notification.reference_number }}) has been resolved.
+            You are viewing an earlier "{{ notification.status }}" notification from {{ notification.date_received|format_date }}.
+            {% if resolved_notification %}
+            The issue was resolved on {{ resolved_notification.date_received|format_date }}.
+            <a href="{{ url_for('notification_detail', notif_id=resolved_notification.id) }}" class="link">View resolved notification →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="detail-section">
+            <h3>Basic Information</h3>
+            <table class="detail-table">
+                <tr>
+                    <th>Reference Number:</th>
+                    <td>{{ notification.reference_number }}</td>
+                </tr>
+                <tr>
+                    <th>Platform:</th>
+                    <td>{{ notification.platform }}</td>
+                </tr>
+                <tr>
+                    <th>Event Type:</th>
+                    <td>{{ notification.event_type }}</td>
+                </tr>
+                <tr>
+                    <th>Status:</th>
+                    <td>{{ notification.status }}</td>
+                </tr>
+                <tr>
+                    <th>Priority:</th>
+                    <td>{{ notification.priority }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="detail-section">
+            <h3>Timing</h3>
+            <table class="detail-table">
+                <tr>
+                    <th>Date Received:</th>
+                    <td>{{ notification.date_received|format_date }}</td>
+                </tr>
+                {% if notification.scheduled_date %}
+                <tr>
+                    <th>Scheduled Date:</th>
+                    <td>{{ notification.scheduled_date }} {% if notification.scheduled_time %}{{ notification.scheduled_time }}{% endif %}</td>
+                </tr>
+                {% endif %}
+                {% if notification.duration %}
+                <tr>
+                    <th>Duration:</th>
+                    <td>{{ notification.duration }}</td>
+                </tr>
+                {% endif %}
+                {% if notification.time_to_resolve_minutes %}
+                <tr>
+                    <th>Time to Resolve:</th>
+                    <td>{{ notification.time_to_resolve_minutes|format_duration }}</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+
+        <div class="detail-section">
+            <h3>Summary</h3>
+            <p class="detail-text">{{ notification.summary or 'No summary available' }}</p>
+        </div>
+
+        {% if notification.affected_services %}
+        <div class="detail-section">
+            <h3>Affected Services</h3>
+            <p class="detail-text">{{ notification.affected_services }}</p>
+        </div>
+        {% endif %}
+
+        {% if paired %}
+        <div class="detail-section paired-section">
+            <h3>Paired Notification</h3>
+            <p>This notification is paired with:</p>
+            <div class="paired-card">
+                <div class="notif-header">
+                    <span class="ref-number">{{ paired.reference_number }}</span>
+                    <span class="badge badge-{{ paired.status|lower }}">{{ paired.status }}</span>
+                </div>
+                <p><strong>Date:</strong> {{ paired.date_received|format_date }}</p>
+                <a href="{{ url_for('notification_detail', notif_id=paired.id) }}" class="link">View paired notification →</a>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="detail-section">
+            <h3>Email Details</h3>
+            <table class="detail-table">
+                <tr>
+                    <th>Subject:</th>
+                    <td>{{ notification.raw_email_subject }}</td>
+                </tr>
+                <tr>
+                    <th>Source:</th>
+                    <td>{{ notification.inbox_source }}</td>
+                </tr>
+                <tr>
+                    <th>Gmail Message ID:</th>
+                    <td><code>{{ notification.gmail_message_id }}</code></td>
+                </tr>
+            </table>
+        </div>
+
+        {% if notification.raw_email_body %}
+        <div class="detail-section">
+            <h3>Raw Email Body</h3>
+            <pre class="email-body">{{ notification.raw_email_body }}</pre>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

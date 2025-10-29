@@ -1,0 +1,54 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Sensitive files
+credentials.json
+token.json
+*.json.backup
+
+# Config
+config.yaml
+.orbcomm/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temp files
+*.tmp
+temp/
+tmp/
+
+# CSV exports
+*.csv
+exports/
+
+# Backups
+*.backup
+*.bak
