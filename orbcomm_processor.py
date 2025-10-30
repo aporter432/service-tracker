@@ -26,7 +26,9 @@ class SimpleORBCOMMParser:
         self.data = []
         self.reference_counter = {}
 
-    def parse_text(self, text: str, subject: str = "", email_date: str = None) -> Dict:
+    def parse_text(
+        self, text: str, subject: str = "", email_date: str = None
+    ) -> Dict:  # noqa: C901
         """Parse notification text and extract key information.
 
         Args:
@@ -373,7 +375,7 @@ class SimpleORBCOMMParser:
         print("=" * 60)
 
 
-def interactive_mode():
+def interactive_mode():  # noqa: C901
     """Run the parser in interactive mode."""
     parser = SimpleORBCOMMParser()
 

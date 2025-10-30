@@ -160,7 +160,7 @@ class SchedulerSetup:
 
         return True
 
-    def status(self):
+    def status(self):  # noqa: C901
         """Check scheduler status"""
         print("=" * 70)
         print("  ORBCOMM Scheduler Status")

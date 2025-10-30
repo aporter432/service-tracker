@@ -232,7 +232,7 @@ class ORBCOMMParserApp:
             "Success", f"Successfully parsed {len(emails)} notification(s)!"
         )
 
-    def parse_notification_text(self, text, subject):
+    def parse_notification_text(self, text, subject):  # noqa: C901
         """Parse ORBCOMM notification text."""
         result = {
             "reference_number": "",

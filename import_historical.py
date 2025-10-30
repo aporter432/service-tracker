@@ -80,7 +80,7 @@ def extract_email_content(message_data):
     }
 
 
-def import_historical_emails(
+def import_historical_emails(  # noqa: C901
     inbox_number: int, inbox_email: str, max_emails: int = None
 ):
     """Import all historical emails from an inbox"""
