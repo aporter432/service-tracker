@@ -3,22 +3,24 @@ Security enhancements for ORBCOMM Service Tracker
 Includes rate limiting, authentication, and security headers
 """
 
-import os
 import hashlib
-import secrets
+import os
+from datetime import datetime
 from functools import wraps
-from flask import request, jsonify, session
-from datetime import datetime, timedelta
+
+from flask import jsonify, request, session
 
 try:
     from flask_limiter import Limiter
     from flask_limiter.util import get_remote_address
+
     LIMITER_AVAILABLE = True
 except ImportError:
     LIMITER_AVAILABLE = False
 
 try:
     from flask_talisman import Talisman
+
     TALISMAN_AVAILABLE = True
 except ImportError:
     TALISMAN_AVAILABLE = False
@@ -38,9 +40,9 @@ class RateLimiter:
             key_func=get_remote_address,
             default_limits=[
                 os.environ.get("RATELIMIT_DEFAULT", "100 per hour"),
-                "20 per minute"
+                "20 per minute",
             ],
-            storage_uri=os.environ.get("RATELIMIT_STORAGE_URL", "memory://")
+            storage_uri=os.environ.get("RATELIMIT_STORAGE_URL", "memory://"),
         )
 
         return limiter
@@ -56,22 +58,25 @@ class SecurityHeaders:
             # Manual security headers if Talisman not available
             @app.after_request
             def set_security_headers(response):
-                response.headers['X-Content-Type-Options'] = 'nosniff'
-                response.headers['X-Frame-Options'] = 'SAMEORIGIN'
-                response.headers['X-XSS-Protection'] = '1; mode=block'
-                response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+                response.headers["X-Content-Type-Options"] = "nosniff"
+                response.headers["X-Frame-Options"] = "SAMEORIGIN"
+                response.headers["X-XSS-Protection"] = "1; mode=block"
+                response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
                 if os.environ.get("FLASK_ENV") != "development":
-                    response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains'
+                    response.headers[
+                        "Strict-Transport-Security"
+                    ] = "max-age=63072000; includeSubDomains"
 
                 return response
+
         else:
             # Use Talisman for comprehensive security
             csp = {
-                'default-src': ["'self'", 'https:'],
-                'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-                'style-src': ["'self'", "'unsafe-inline'"],
-                'img-src': ["'self'", 'data:', 'https:'],
+                "default-src": ["'self'", "https:"],
+                "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+                "style-src": ["'self'", "'unsafe-inline'"],
+                "img-src": ["'self'", "data:", "https:"],
             }
 
             force_https = os.environ.get("FLASK_ENV") != "development"
@@ -81,7 +86,7 @@ class SecurityHeaders:
                 force_https=force_https,
                 strict_transport_security=True,
                 content_security_policy=csp,
-                content_security_policy_nonce_in=['script-src']
+                content_security_policy_nonce_in=["script-src"],
             )
 
 
@@ -100,9 +105,9 @@ class SimpleAuth:
 
         # If no credentials set, disable auth
         if not self.username or not self.password_hash:
-            app.config['AUTH_ENABLED'] = False
+            app.config["AUTH_ENABLED"] = False
         else:
-            app.config['AUTH_ENABLED'] = True
+            app.config["AUTH_ENABLED"] = True
 
     @staticmethod
     def hash_password(password: str) -> str:
@@ -111,65 +116,69 @@ class SimpleAuth:
 
     def verify_password(self, username: str, password: str) -> bool:
         """Verify username and password"""
-        if not self.app.config.get('AUTH_ENABLED', False):
+        if not self.app.config.get("AUTH_ENABLED", False):
             return True
 
         password_hash = self.hash_password(password)
-        return (
-            username == self.username and
-            password_hash == self.password_hash
-        )
+        return username == self.username and password_hash == self.password_hash
 
     def login_required(self, f):
         """Decorator to require login for routes"""
+
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            if not self.app.config.get('AUTH_ENABLED', False):
+            if not self.app.config.get("AUTH_ENABLED", False):
                 return f(*args, **kwargs)
 
-            if not session.get('logged_in'):
+            if not session.get("logged_in"):
                 return jsonify({"error": "Authentication required"}), 401
 
             return f(*args, **kwargs)
+
         return decorated_function
 
 
 def register_auth_routes(app, auth):
     """Register authentication routes"""
 
-    @app.route('/login', methods=['POST'])
+    @app.route("/login", methods=["POST"])
     def login():
         """Login endpoint"""
-        if not app.config.get('AUTH_ENABLED', False):
+        if not app.config.get("AUTH_ENABLED", False):
             return jsonify({"message": "Authentication disabled"}), 200
 
         data = request.get_json()
-        username = data.get('username')
-        password = data.get('password')
+        username = data.get("username")
+        password = data.get("password")
 
         if auth.verify_password(username, password):
-            session['logged_in'] = True
-            session['username'] = username
+            session["logged_in"] = True
+            session["username"] = username
             session.permanent = True
             return jsonify({"message": "Login successful"}), 200
         else:
             return jsonify({"error": "Invalid credentials"}), 401
 
-    @app.route('/logout', methods=['POST'])
+    @app.route("/logout", methods=["POST"])
     def logout():
         """Logout endpoint"""
-        session.pop('logged_in', None)
-        session.pop('username', None)
+        session.pop("logged_in", None)
+        session.pop("username", None)
         return jsonify({"message": "Logout successful"}), 200
 
-    @app.route('/auth/status')
+    @app.route("/auth/status")
     def auth_status():
         """Check authentication status"""
-        return jsonify({
-            "authenticated": session.get('logged_in', False),
-            "username": session.get('username'),
-            "auth_enabled": app.config.get('AUTH_ENABLED', False)
-        }), 200
+        return (
+            jsonify(
+                {
+                    "authenticated": session.get("logged_in", False),
+                    "username": session.get("username"),
+                    "auth_enabled": app.config.get("AUTH_ENABLED", False),
+                }
+            ),
+            200,
+        )
 
 
 class InputValidator:
@@ -179,7 +188,8 @@ class InputValidator:
     def validate_email(email: str) -> bool:
         """Basic email validation"""
         import re
-        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+        pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         return re.match(pattern, email) is not None
 
     @staticmethod

@@ -15,7 +15,9 @@ workers = int(os.environ.get("WORKERS", multiprocessing.cpu_count() * 2 + 1))
 worker_class = "gevent"  # Async worker for better concurrency
 worker_connections = 1000
 max_requests = 1000  # Restart workers after this many requests (prevents memory leaks)
-max_requests_jitter = 50  # Add randomness to max_requests to prevent all workers restarting at once
+max_requests_jitter = (
+    50  # Add randomness to max_requests to prevent all workers restarting at once
+)
 timeout = 120  # 2 minutes
 keepalive = 5
 
@@ -35,6 +37,7 @@ access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
 
 # Process naming
 proc_name = "orbcomm-tracker"
+
 
 # Server hooks
 def on_starting(server):

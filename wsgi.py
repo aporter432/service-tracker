@@ -12,12 +12,12 @@ project_dir = Path(__file__).parent
 sys.path.insert(0, str(project_dir))
 
 # Load environment variables from .env file
-from dotenv import load_dotenv
+from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv()
 
 # Import the Flask application
-from orbcomm_dashboard import app
+from orbcomm_dashboard import app  # noqa: E402
 
 # Application callable for WSGI server
 application = app

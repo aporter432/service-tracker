@@ -4,10 +4,9 @@ Scheduler Setup Script
 Install/uninstall daily ORBCOMM sync scheduler for macOS
 """
 
-import subprocess
-import shutil
-from pathlib import Path
 import argparse
+import subprocess
+from pathlib import Path
 
 
 class SchedulerSetup:
@@ -15,17 +14,17 @@ class SchedulerSetup:
 
     def __init__(self):
         self.project_dir = Path(__file__).parent.absolute()
-        self.python_path = self.project_dir / 'venv' / 'bin' / 'python3'
-        self.scheduler_path = self.project_dir / 'orbcomm_scheduler.py'
-        self.template_path = self.project_dir / 'com.orbcomm.tracker.plist.template'
+        self.python_path = self.project_dir / "venv" / "bin" / "python3"
+        self.scheduler_path = self.project_dir / "orbcomm_scheduler.py"
+        self.template_path = self.project_dir / "com.orbcomm.tracker.plist.template"
 
         # User's LaunchAgents directory
-        self.launch_agents_dir = Path.home() / 'Library' / 'LaunchAgents'
-        self.plist_name = 'com.orbcomm.tracker.daily.plist'
+        self.launch_agents_dir = Path.home() / "Library" / "LaunchAgents"
+        self.plist_name = "com.orbcomm.tracker.daily.plist"
         self.plist_path = self.launch_agents_dir / self.plist_name
 
         # Log directory
-        self.log_dir = Path.home() / '.orbcomm' / 'logs'
+        self.log_dir = Path.home() / ".orbcomm" / "logs"
 
     def check_requirements(self):
         """Check if all requirements are met"""
@@ -45,23 +44,23 @@ class SchedulerSetup:
     def generate_plist(self):
         """Generate plist file from template"""
         # Read template
-        with open(self.template_path, 'r') as f:
+        with open(self.template_path, "r") as f:
             content = f.read()
 
         # Ensure log directory exists
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
         # Replace placeholders
-        content = content.replace('{{PYTHON_PATH}}', str(self.python_path))
-        content = content.replace('{{SCHEDULER_PATH}}', str(self.scheduler_path))
-        content = content.replace('{{PROJECT_DIR}}', str(self.project_dir))
-        content = content.replace('{{LOG_DIR}}', str(self.log_dir))
+        content = content.replace("{{PYTHON_PATH}}", str(self.python_path))
+        content = content.replace("{{SCHEDULER_PATH}}", str(self.scheduler_path))
+        content = content.replace("{{PROJECT_DIR}}", str(self.project_dir))
+        content = content.replace("{{LOG_DIR}}", str(self.log_dir))
 
         # Ensure LaunchAgents directory exists
         self.launch_agents_dir.mkdir(parents=True, exist_ok=True)
 
         # Write plist file
-        with open(self.plist_path, 'w') as f:
+        with open(self.plist_path, "w") as f:
             f.write(content)
 
         print(f"✅ Generated plist file: {self.plist_path}")
@@ -96,10 +95,10 @@ class SchedulerSetup:
         print("🚀 Loading scheduler into launchd...")
         try:
             subprocess.run(
-                ['launchctl', 'load', str(self.plist_path)],
+                ["launchctl", "load", str(self.plist_path)],
                 check=True,
                 capture_output=True,
-                text=True
+                text=True,
             )
             print("✅ Scheduler loaded successfully")
         except subprocess.CalledProcessError as e:
@@ -112,14 +111,14 @@ class SchedulerSetup:
         print("=" * 70)
         print()
         print("Configuration:")
-        print(f"  Schedule:      Daily at 9:00 AM")
-        print(f"  Inbox:         2 (continuous monitoring)")
+        print("  Schedule:      Daily at 9:00 AM")
+        print("  Inbox:         2 (continuous monitoring)")
         print(f"  Log location:  {self.log_dir}")
         print()
         print("Commands:")
-        print(f"  Check status:  launchctl list | grep orbcomm")
+        print("  Check status:  launchctl list | grep orbcomm")
         print(f"  View logs:     tail -f {self.log_dir}/scheduler_stdout.log")
-        print(f"  Uninstall:     ./venv/bin/python3 setup_scheduler.py --uninstall")
+        print("  Uninstall:     ./venv/bin/python3 setup_scheduler.py --uninstall")
         print()
 
         return True
@@ -139,10 +138,10 @@ class SchedulerSetup:
         print("🛑 Unloading scheduler from launchd...")
         try:
             subprocess.run(
-                ['launchctl', 'unload', str(self.plist_path)],
+                ["launchctl", "unload", str(self.plist_path)],
                 check=True,
                 capture_output=True,
-                text=True
+                text=True,
             )
             print("✅ Scheduler unloaded")
         except subprocess.CalledProcessError as e:
@@ -174,24 +173,21 @@ class SchedulerSetup:
         else:
             print("❌ Configuration file not found (scheduler not installed)")
             print()
-            print(f"To install: ./venv/bin/python3 setup_scheduler.py --install")
+            print("To install: ./venv/bin/python3 setup_scheduler.py --install")
             return
 
         # Check launchd status
         try:
             result = subprocess.run(
-                ['launchctl', 'list'],
-                check=True,
-                capture_output=True,
-                text=True
+                ["launchctl", "list"], check=True, capture_output=True, text=True
             )
 
-            if 'com.orbcomm.tracker.daily' in result.stdout:
+            if "com.orbcomm.tracker.daily" in result.stdout:
                 print("✅ Scheduler is loaded in launchd")
 
                 # Extract status from launchctl list
-                for line in result.stdout.split('\n'):
-                    if 'com.orbcomm.tracker.daily' in line:
+                for line in result.stdout.split("\n"):
+                    if "com.orbcomm.tracker.daily" in line:
                         print(f"   Status: {line}")
             else:
                 print("❌ Scheduler not loaded in launchd")
@@ -205,14 +201,14 @@ class SchedulerSetup:
 
         # Check log files
         print("Log files:")
-        stdout_log = self.log_dir / 'scheduler_stdout.log'
-        stderr_log = self.log_dir / 'scheduler_stderr.log'
+        stdout_log = self.log_dir / "scheduler_stdout.log"
+        stderr_log = self.log_dir / "scheduler_stderr.log"
 
         if stdout_log.exists():
             print(f"  ✅ Standard output: {stdout_log}")
             # Show last few lines
             try:
-                with open(stdout_log, 'r') as f:
+                with open(stdout_log, "r") as f:
                     lines = f.readlines()
                     if lines:
                         print(f"     Last line: {lines[-1].strip()}")
@@ -232,14 +228,14 @@ class SchedulerSetup:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description='Setup ORBCOMM daily sync scheduler'
-    )
+    parser = argparse.ArgumentParser(description="Setup ORBCOMM daily sync scheduler")
 
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--install', action='store_true', help='Install the scheduler')
-    group.add_argument('--uninstall', action='store_true', help='Uninstall the scheduler')
-    group.add_argument('--status', action='store_true', help='Check scheduler status')
+    group.add_argument("--install", action="store_true", help="Install the scheduler")
+    group.add_argument(
+        "--uninstall", action="store_true", help="Uninstall the scheduler"
+    )
+    group.add_argument("--status", action="store_true", help="Check scheduler status")
 
     args = parser.parse_args()
 
@@ -256,5 +252,5 @@ def main():
         return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exit(main())

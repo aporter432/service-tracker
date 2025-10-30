@@ -44,7 +44,7 @@ jobs:
         pytest tests/ -v --cov=orbcomm_tracker --cov-report=xml --cov-report=term
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       if: matrix.python-version == '3.10'
       with:
         file: ./coverage.xml
@@ -85,7 +85,7 @@ jobs:
         bandit -r orbcomm_tracker/ -f json -o bandit-report.json || true
 
     - name: Upload security reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: security-reports

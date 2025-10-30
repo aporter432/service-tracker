@@ -5,14 +5,15 @@ Tests the full application stack
 
 import os
 import sys
-import pytest
 import tempfile
 from pathlib import Path
+
+import pytest
 
 # Add project to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from orbcomm_tracker.database import Database
+from orbcomm_tracker.database import Database  # noqa: E402
 
 
 class TestDatabaseIntegration:
@@ -21,7 +22,7 @@ class TestDatabaseIntegration:
     @pytest.fixture
     def temp_db(self):
         """Create temporary database for testing"""
-        with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             db_path = f.name
 
         db = Database(db_path)
@@ -37,16 +38,16 @@ class TestDatabaseIntegration:
         """Test complete notification lifecycle"""
         # Store notification with all required fields
         notification_data = {
-            'reference_number': 'S123456',
-            'gmail_message_id': 'test_msg_id_123456',
-            'event_type': 'Service Interruption',
-            'summary': 'Test notification summary',
-            'raw_email_subject': 'Test Subject',
-            'date_received': '2025-01-01 10:00:00',
-            'status': 'Open',
-            'platform': 'IDP',
-            'raw_email_body': 'Test body',
-            'inbox_source': 'test_inbox'
+            "reference_number": "S123456",
+            "gmail_message_id": "test_msg_id_123456",
+            "event_type": "Service Interruption",
+            "summary": "Test notification summary",
+            "raw_email_subject": "Test Subject",
+            "date_received": "2025-01-01 10:00:00",
+            "status": "Open",
+            "platform": "IDP",
+            "raw_email_body": "Test body",
+            "inbox_source": "test_inbox",
         }
 
         result = temp_db.insert_notification(notification_data)
@@ -55,17 +56,17 @@ class TestDatabaseIntegration:
         # Get notification
         notifications = temp_db.get_all_notifications()
         assert len(notifications) == 1
-        assert notifications[0]['reference_number'] == 'S123456'
+        assert notifications[0]["reference_number"] == "S123456"
 
         # Insert resolved notification with unique gmail_message_id
         resolved_data = notification_data.copy()
-        resolved_data['gmail_message_id'] = 'test_msg_id_123456_resolved'
-        resolved_data['status'] = 'Resolved'
+        resolved_data["gmail_message_id"] = "test_msg_id_123456_resolved"
+        resolved_data["status"] = "Resolved"
         result = temp_db.insert_notification(resolved_data)
         assert result is not None  # Returns integer ID on success
 
         # Link the pair
-        temp_db.link_notification_pair('S123456')
+        temp_db.link_notification_pair("S123456")
 
         # Check pairing
         pairs = temp_db.get_notification_pairs()
@@ -75,28 +76,30 @@ class TestDatabaseIntegration:
         """Test statistics calculation"""
         # Add test data with all required fields
         for i in range(5):
-            temp_db.insert_notification({
-                'reference_number': f'S{i:06d}',
-                'gmail_message_id': f'test_msg_id_{i}',
-                'event_type': 'Service Interruption',
-                'summary': f'Test notification {i}',
-                'raw_email_subject': f'Test {i}',
-                'date_received': '2025-01-01 10:00:00',
-                'status': 'Open' if i % 2 == 0 else 'Resolved',
-                'platform': 'IDP',
-                'raw_email_body': 'Test',
-                'inbox_source': 'test'
-            })
+            temp_db.insert_notification(
+                {
+                    "reference_number": f"S{i:06d}",
+                    "gmail_message_id": f"test_msg_id_{i}",
+                    "event_type": "Service Interruption",
+                    "summary": f"Test notification {i}",
+                    "raw_email_subject": f"Test {i}",
+                    "date_received": "2025-01-01 10:00:00",
+                    "status": "Open" if i % 2 == 0 else "Resolved",
+                    "platform": "IDP",
+                    "raw_email_body": "Test",
+                    "inbox_source": "test",
+                }
+            )
 
         stats = temp_db.get_current_stats()
-        assert stats['total_notifications'] == 5
-        assert stats['open_count'] >= 0
-        assert stats['resolved_count'] >= 0
+        assert stats["total_notifications"] == 5
+        assert stats["open_count"] >= 0
+        assert stats["resolved_count"] >= 0
 
     def test_sync_history(self, temp_db):
         """Test sync history tracking"""
         # Record sync - log_sync_start returns the sync_id
-        sync_id = temp_db.log_sync_start('test_inbox')
+        sync_id = temp_db.log_sync_start("test_inbox")
         assert sync_id is not None
 
         temp_db.log_sync_complete(
@@ -104,29 +107,31 @@ class TestDatabaseIntegration:
             emails_fetched=10,
             emails_parsed=10,
             errors_count=0,
-            status='success'
+            status="success",
         )
 
         # Get history
         history = temp_db.get_sync_history(limit=5)
         assert len(history) > 0
-        assert history[0]['inbox_source'] == 'test_inbox'
+        assert history[0]["inbox_source"] == "test_inbox"
 
     def test_archiving(self, temp_db):
         """Test notification archiving"""
         # Add old notification with all required fields
-        temp_db.insert_notification({
-            'reference_number': 'OLD001',
-            'gmail_message_id': 'test_old_msg_001',
-            'event_type': 'Service Interruption',
-            'summary': 'Old notification',
-            'raw_email_subject': 'Old notification',
-            'date_received': '2024-01-01 10:00:00',
-            'status': 'Resolved',
-            'platform': 'IDP',
-            'raw_email_body': 'Old',
-            'inbox_source': 'test'
-        })
+        temp_db.insert_notification(
+            {
+                "reference_number": "OLD001",
+                "gmail_message_id": "test_old_msg_001",
+                "event_type": "Service Interruption",
+                "summary": "Old notification",
+                "raw_email_subject": "Old notification",
+                "date_received": "2024-01-01 10:00:00",
+                "status": "Resolved",
+                "platform": "IDP",
+                "raw_email_body": "Old",
+                "inbox_source": "test",
+            }
+        )
 
         # Archive
         archived = temp_db.archive_old_notifications(days=180)
@@ -138,14 +143,14 @@ class TestConfigurationManagement:
 
     def test_config_loading(self):
         """Test configuration loading"""
-        from config import get_config, DevelopmentConfig, ProductionConfig
+        from config import get_config  # noqa: F401
 
         # Test development config
-        dev_config = get_config('development')
+        dev_config = get_config("development")
         assert dev_config.DEBUG is True
 
         # Test production config
-        prod_config = get_config('production')
+        prod_config = get_config("production")
         assert prod_config.DEBUG is False
 
     def test_env_variables(self):
@@ -156,11 +161,11 @@ class TestConfigurationManagement:
         assert Config.PORT == int(os.environ.get("PORT", "5000"))
 
         # Test environment override
-        os.environ['PORT'] = '8080'
+        os.environ["PORT"] = "8080"
         assert int(os.environ.get("PORT", "5000")) == 8080
 
         # Cleanup
-        del os.environ['PORT']
+        del os.environ["PORT"]
 
 
 class TestHealthChecks:
@@ -178,23 +183,23 @@ class TestHealthChecks:
 
         # Check health
         result = HealthCheck.check_database(str(db_path))
-        assert result['status'] == 'healthy'
+        assert result["status"] == "healthy"
 
     def test_disk_space_check(self, tmp_path):
         """Test disk space check"""
         from orbcomm_tracker.monitoring import HealthCheck
 
         result = HealthCheck.check_disk_space(str(tmp_path))
-        assert result['status'] in ['healthy', 'warning']
-        assert 'percent_used' in result
+        assert result["status"] in ["healthy", "warning"]
+        assert "percent_used" in result
 
     def test_memory_check(self):
         """Test memory check"""
         from orbcomm_tracker.monitoring import HealthCheck
 
         result = HealthCheck.check_memory()
-        assert result['status'] in ['healthy', 'warning']
-        assert 'percent_used' in result
+        assert result["status"] in ["healthy", "warning"]
+        assert "percent_used" in result
 
 
 class TestSecurityFeatures:
@@ -247,8 +252,8 @@ def app():
     # Import app
     from orbcomm_dashboard import app as flask_app
 
-    flask_app.config['TESTING'] = True
-    flask_app.config['DATABASE_PATH'] = ':memory:'
+    flask_app.config["TESTING"] = True
+    flask_app.config["DATABASE_PATH"] = ":memory:"
 
     return flask_app
 
@@ -264,17 +269,17 @@ class TestFlaskEndpoints:
 
     def test_index_route(self, client):
         """Test index page loads"""
-        response = client.get('/')
+        response = client.get("/")
         assert response.status_code == 200
 
     def test_api_stats(self, client):
         """Test stats API endpoint"""
-        response = client.get('/api/stats')
+        response = client.get("/api/stats")
         assert response.status_code == 200
         data = response.get_json()
-        assert 'stats' in data
-        assert 'total_notifications' in data['stats']
+        assert "stats" in data
+        assert "total_notifications" in data["stats"]
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

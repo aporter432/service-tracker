@@ -4,77 +4,85 @@ Historical Email Import
 One-time import of all ORBCOMM emails from an inbox
 """
 
-import sys
 import argparse
+import base64
+import sys
+from datetime import datetime
 from pathlib import Path
+
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from datetime import datetime
-import base64
-from email import message_from_bytes
 
 # Add project to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from orbcomm_tracker.database import Database
-from orbcomm_processor import SimpleORBCOMMParser
+from orbcomm_processor import SimpleORBCOMMParser  # noqa: E402
+from orbcomm_tracker.database import Database  # noqa: E402
 
-SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
 
 def get_gmail_service(inbox_number: int):
     """Get authenticated Gmail service"""
-    config_dir = Path.home() / '.orbcomm' / f'inbox{inbox_number}'
-    token_file = config_dir / 'token.json'
+    config_dir = Path.home() / ".orbcomm" / f"inbox{inbox_number}"
+    token_file = config_dir / "token.json"
 
     if not token_file.exists():
         print(f"❌ Error: Inbox {inbox_number} not authenticated")
-        print(f"   Run: ./venv/bin/python3 setup_gmail_auth.py --inbox {inbox_number} --email YOUR_EMAIL")
+        print(
+            f"   Run: ./venv/bin/python3 setup_gmail_auth.py --inbox {inbox_number} --email YOUR_EMAIL"
+        )
         return None
 
     creds = Credentials.from_authorized_user_file(str(token_file), SCOPES)
-    return build('gmail', 'v1', credentials=creds)
+    return build("gmail", "v1", credentials=creds)
 
 
 def extract_email_content(message_data):
     """Extract subject and body from Gmail message"""
-    headers = message_data['payload']['headers']
+    headers = message_data["payload"]["headers"]
 
-    subject = ''
+    subject = ""
     for header in headers:
-        if header['name'] == 'Subject':
-            subject = header['value']
+        if header["name"] == "Subject":
+            subject = header["value"]
             break
 
     # Get email body
-    body = ''
-    if 'parts' in message_data['payload']:
-        for part in message_data['payload']['parts']:
-            if part['mimeType'] == 'text/plain':
-                if 'data' in part['body']:
-                    body = base64.urlsafe_b64decode(part['body']['data']).decode('utf-8')
+    body = ""
+    if "parts" in message_data["payload"]:
+        for part in message_data["payload"]["parts"]:
+            if part["mimeType"] == "text/plain":
+                if "data" in part["body"]:
+                    body = base64.urlsafe_b64decode(part["body"]["data"]).decode(
+                        "utf-8"
+                    )
                     break
     else:
-        if 'data' in message_data['payload']['body']:
-            body = base64.urlsafe_b64decode(message_data['payload']['body']['data']).decode('utf-8')
+        if "data" in message_data["payload"]["body"]:
+            body = base64.urlsafe_b64decode(
+                message_data["payload"]["body"]["data"]
+            ).decode("utf-8")
 
     # Get date
     date_received = None
     for header in headers:
-        if header['name'] == 'Date':
-            date_received = header['value']
+        if header["name"] == "Date":
+            date_received = header["value"]
             break
 
     return {
-        'subject': subject,
-        'body': body,
-        'date_received': date_received,
-        'message_id': message_data['id'],
-        'thread_id': message_data['threadId']
+        "subject": subject,
+        "body": body,
+        "date_received": date_received,
+        "message_id": message_data["id"],
+        "thread_id": message_data["threadId"],
     }
 
 
-def import_historical_emails(inbox_number: int, inbox_email: str, max_emails: int = None):
+def import_historical_emails(
+    inbox_number: int, inbox_email: str, max_emails: int = None
+):
     """Import all historical emails from an inbox"""
     print("=" * 70)
     print(f"  Historical Import - Inbox {inbox_number}")
@@ -99,13 +107,16 @@ def import_historical_emails(inbox_number: int, inbox_email: str, max_emails: in
 
     try:
         # Get all message IDs (no date filter for historical)
-        results = service.users().messages().list(
-            userId='me',
-            q=query,
-            maxResults=500 if not max_emails else max_emails
-        ).execute()
+        results = (
+            service.users()
+            .messages()
+            .list(
+                userId="me", q=query, maxResults=500 if not max_emails else max_emails
+            )
+            .execute()
+        )
 
-        messages = results.get('messages', [])
+        messages = results.get("messages", [])
 
         if not messages:
             print("❌ No ORBCOMM emails found")
@@ -124,39 +135,42 @@ def import_historical_emails(inbox_number: int, inbox_email: str, max_emails: in
         print("-" * 70)
 
         for i, message in enumerate(messages, 1):
-            msg_id = message['id']
+            msg_id = message["id"]
 
             try:
                 # Check if already imported
                 existing = db.get_notification_by_gmail_id(msg_id)
                 if existing:
                     duplicates += 1
-                    print(f"[{i}/{total_emails}] ⏭️  Already imported: {existing['reference_number']}")
+                    print(
+                        f"[{i}/{total_emails}] ⏭️  Already imported: {existing['reference_number']}"
+                    )
                     continue
 
                 # Fetch full message
-                msg_data = service.users().messages().get(
-                    userId='me',
-                    id=msg_id,
-                    format='full'
-                ).execute()
+                msg_data = (
+                    service.users()
+                    .messages()
+                    .get(userId="me", id=msg_id, format="full")
+                    .execute()
+                )
 
                 # Extract content
                 email_content = extract_email_content(msg_data)
 
                 # Parse with existing parser (pass email date from headers)
                 parsed = parser.parse_text(
-                    email_content['body'],
-                    email_content['subject'],
-                    email_date=email_content.get('date_received')
+                    email_content["body"],
+                    email_content["subject"],
+                    email_date=email_content.get("date_received"),
                 )
 
                 # Add Gmail metadata
-                parsed['gmail_message_id'] = msg_id
-                parsed['thread_id'] = email_content['thread_id']
-                parsed['inbox_source'] = inbox_source
-                parsed['raw_email_body'] = email_content['body']
-                parsed['raw_email_subject'] = email_content['subject']
+                parsed["gmail_message_id"] = msg_id
+                parsed["thread_id"] = email_content["thread_id"]
+                parsed["inbox_source"] = inbox_source
+                parsed["raw_email_body"] = email_content["body"]
+                parsed["raw_email_subject"] = email_content["subject"]
 
                 # Store in database
                 notif_id = db.insert_notification(parsed)
@@ -174,8 +188,8 @@ def import_historical_emails(inbox_number: int, inbox_email: str, max_emails: in
 
                 # Try to link pairs every 10 emails
                 if imported % 10 == 0:
-                    if parsed.get('reference_number'):
-                        db.link_notification_pair(parsed['reference_number'])
+                    if parsed.get("reference_number"):
+                        db.link_notification_pair(parsed["reference_number"])
 
             except Exception as e:
                 errors += 1
@@ -196,11 +210,14 @@ def import_historical_emails(inbox_number: int, inbox_email: str, max_emails: in
             print("🔗 Linking Open/Resolved pairs...")
             # Get all unique reference numbers
             cursor = db.conn.cursor()
-            cursor.execute('''
+            cursor.execute(
+                """
                 SELECT DISTINCT reference_number
                 FROM notifications
                 WHERE inbox_source = ?
-            ''', (inbox_source,))
+            """,
+                (inbox_source,),
+            )
             refs = [row[0] for row in cursor.fetchall()]
 
             linked = 0
@@ -212,9 +229,9 @@ def import_historical_emails(inbox_number: int, inbox_email: str, max_emails: in
             print()
 
         # Mark historical import complete
-        db.set_config(f'inbox{inbox_number}_historical_complete', 'true')
-        db.set_config(f'inbox{inbox_number}_import_date', datetime.now().isoformat())
-        db.set_config(f'inbox{inbox_number}_email', inbox_email)
+        db.set_config(f"inbox{inbox_number}_historical_complete", "true")
+        db.set_config(f"inbox{inbox_number}_import_date", datetime.now().isoformat())
+        db.set_config(f"inbox{inbox_number}_email", inbox_email)
 
         # Show stats
         print("📈 Database Stats")
@@ -223,7 +240,9 @@ def import_historical_emails(inbox_number: int, inbox_email: str, max_emails: in
         print(f"Total notifications: {stats['total_notifications']}")
         print(f"Open:                {stats['open_count']}")
         print(f"Resolved:            {stats['resolved_count']}")
-        print(f"Avg resolution:      {stats['avg_resolution_time_minutes']:.1f} minutes")
+        print(
+            f"Avg resolution:      {stats['avg_resolution_time_minutes']:.1f} minutes"
+        )
         print()
 
         print("=" * 70)
@@ -234,9 +253,11 @@ def import_historical_emails(inbox_number: int, inbox_email: str, max_emails: in
         print("It will not be included in future daily syncs.")
         print()
         print("Next steps:")
-        print(f"  1. Set up inbox 2 (continuous monitoring)")
-        print(f"  2. Run: ./venv/bin/python3 setup_gmail_auth.py --inbox 2 --email work@company.com")
-        print(f"  3. Start dashboard: ./venv/bin/python3 orbcomm_dashboard.py")
+        print("  1. Set up inbox 2 (continuous monitoring)")
+        print(
+            "  2. Run: ./venv/bin/python3 setup_gmail_auth.py --inbox 2 --email work@company.com"
+        )
+        print("  3. Start dashboard: ./venv/bin/python3 orbcomm_dashboard.py")
 
         db.close()
         return True
@@ -248,31 +269,27 @@ def import_historical_emails(inbox_number: int, inbox_email: str, max_emails: in
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Import all historical ORBCOMM emails from an inbox'
+        description="Import all historical ORBCOMM emails from an inbox"
     )
     parser.add_argument(
-        '--inbox',
+        "--inbox",
         type=int,
         required=True,
-        help='Inbox number (typically 1 for historical)'
+        help="Inbox number (typically 1 for historical)",
     )
     parser.add_argument(
-        '--email',
-        type=str,
-        help='Email address (optional, for display)'
+        "--email", type=str, help="Email address (optional, for display)"
     )
     parser.add_argument(
-        '--max',
-        type=int,
-        help='Maximum emails to import (for testing)'
+        "--max", type=int, help="Maximum emails to import (for testing)"
     )
 
     args = parser.parse_args()
 
     if not args.email:
         # Try to get from auth
-        config_dir = Path.home() / '.orbcomm' / f'inbox{args.inbox}'
-        token_file = config_dir / 'token.json'
+        config_dir = Path.home() / ".orbcomm" / f"inbox{args.inbox}"
+        token_file = config_dir / "token.json"
         if token_file.exists():
             args.email = f"inbox{args.inbox}"
 
@@ -281,5 +298,5 @@ def main():
     return 0 if success else 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exit(main())

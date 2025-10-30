@@ -38,7 +38,7 @@ python3 orbcomm_mac_gui.py
 - **Native Mac menu bar** with keyboard shortcuts
 - **Drag & drop** email files
 - **Direct export** to Numbers app
-- **VS Code integration** 
+- **VS Code integration**
 - **Clipboard support** (⌘V to paste, ⌘C to copy)
 
 ---
@@ -66,7 +66,7 @@ python3 orbcomm_processor.py
 1. **Add as Run Configuration**:
    - Script path: `orbcomm_processor.py`
    - Working directory: (your project folder)
-   
+
 2. **Run with** ⌃R (Control-R)
 
 ### Quick Terminal Commands:
@@ -131,7 +131,7 @@ python3 orbcomm_mac_gui.py
 
 ### For Excel on Mac:
 1. Parse emails with any method above
-2. Click "Copy for Excel" 
+2. Click "Copy for Excel"
 3. Open Excel
 4. Select cell A1 in your tracking sheet
 5. Paste (⌘V)
@@ -217,7 +217,7 @@ orbcomm_project/
 
 ### Email App Integration:
 
-**Mail.app**: 
+**Mail.app**:
 - Select email → File → Save As → Save as .txt
 - Drag into parser GUI
 

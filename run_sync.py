@@ -4,59 +4,52 @@ Manual Sync Runner
 Run this to manually sync ORBCOMM emails from inbox 2
 """
 
-import sys
 import argparse
 import logging
-from pathlib import Path
+import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 
 # Add project to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from orbcomm_tracker.sync import SyncOrchestrator
+from orbcomm_tracker.sync import SyncOrchestrator  # noqa: E402
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Sync ORBCOMM notifications from Gmail'
+        description="Sync ORBCOMM notifications from Gmail"
     )
     parser.add_argument(
-        '--inbox',
+        "--inbox",
         type=int,
         default=2,
-        help='Inbox number to sync (default: 2 for continuous monitoring)'
+        help="Inbox number to sync (default: 2 for continuous monitoring)",
     )
     parser.add_argument(
-        '--days',
+        "--days",
         type=int,
-        help='Number of days to look back (overrides last sync date)'
+        help="Number of days to look back (overrides last sync date)",
     )
     parser.add_argument(
-        '--force',
-        action='store_true',
-        help='Force sync even if marked as historical_complete'
+        "--force",
+        action="store_true",
+        help="Force sync even if marked as historical_complete",
     )
     parser.add_argument(
-        '--archive',
-        type=int,
-        help='Archive notifications older than N days'
+        "--archive", type=int, help="Archive notifications older than N days"
     )
     parser.add_argument(
-        '--snapshot',
-        action='store_true',
-        help='Save stats snapshot after sync'
+        "--snapshot", action="store_true", help="Save stats snapshot after sync"
     )
     parser.add_argument(
-        '--status',
-        action='store_true',
-        help='Show sync status and exit (no sync)'
+        "--status", action="store_true", help="Show sync status and exit (no sync)"
     )
 
     args = parser.parse_args()
@@ -75,12 +68,16 @@ def main():
             status = sync.get_sync_status()
             print("📊 Current Status")
             print("-" * 70)
-            print(f"Inbox:                  {status['inbox_number']} ({status['inbox_source']})")
+            print(
+                f"Inbox:                  {status['inbox_number']} ({status['inbox_source']})"
+            )
             print(f"Last sync:              {status['last_sync'] or 'Never'}")
             print(f"Total notifications:    {status['total_notifications']}")
             print(f"Open:                   {status['open_count']}")
             print(f"Resolved:               {status['resolved_count']}")
-            print(f"Avg resolution time:    {status['avg_resolution_time_minutes']:.1f} minutes")
+            print(
+                f"Avg resolution time:    {status['avg_resolution_time_minutes']:.1f} minutes"
+            )
             print()
             return 0
 
@@ -88,7 +85,9 @@ def main():
         since_date = None
         if args.days:
             since_date = datetime.now() - timedelta(days=args.days)
-            print(f"📅 Looking back {args.days} days (since {since_date.strftime('%Y-%m-%d')})")
+            print(
+                f"📅 Looking back {args.days} days (since {since_date.strftime('%Y-%m-%d')})"
+            )
             print()
 
         # Run sync
@@ -131,7 +130,9 @@ def main():
         print(f"Total notifications:    {status['total_notifications']}")
         print(f"Open:                   {status['open_count']}")
         print(f"Resolved:               {status['resolved_count']}")
-        print(f"Avg resolution time:    {status['avg_resolution_time_minutes']:.1f} minutes")
+        print(
+            f"Avg resolution time:    {status['avg_resolution_time_minutes']:.1f} minutes"
+        )
         print()
 
         print("=" * 70)
@@ -140,13 +141,15 @@ def main():
         print()
 
         sync.close()
-        return 0 if result['status'] == 'success' else 1
+        return 0 if result["status"] == "success" else 1
 
     except FileNotFoundError as e:
         print(f"❌ Error: {e}")
         print()
         print("Please authenticate inbox first:")
-        print(f"  ./venv/bin/python3 setup_gmail_auth.py --inbox {args.inbox} --email YOUR_EMAIL")
+        print(
+            f"  ./venv/bin/python3 setup_gmail_auth.py --inbox {args.inbox} --email YOUR_EMAIL"
+        )
         return 1
     except Exception as e:
         logger.error(f"Sync failed: {e}", exc_info=True)
@@ -155,5 +158,5 @@ def main():
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exit(main())

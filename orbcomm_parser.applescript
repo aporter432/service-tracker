@@ -13,9 +13,9 @@ Usage:
 
 on run
     display dialog "Paste your ORBCOMM email content:" default answer "" with icon note buttons {"Cancel", "Parse"} default button "Parse" with title "ORBCOMM Email Parser"
-    
+
     set emailContent to text returned of result
-    
+
     if emailContent is not "" then
         parseORBCOMMEmail(emailContent)
     end if
@@ -31,9 +31,9 @@ end open
 on parseORBCOMMEmail(emailText)
     -- Create a temporary file with the email content
     set tempFile to "/tmp/orbcomm_temp.txt"
-    
+
     do shell script "echo " & quoted form of emailText & " > " & tempFile
-    
+
     -- Run the Python parser
     set parseResult to do shell script "cd /path/to/orbcomm/folder && python3 -c '
 import re
@@ -69,15 +69,15 @@ if \"resolved\" in text.lower():
 output = f\"Reference: {reference}\\nPlatform: {platform}\\nEvent: {event}\\nStatus: {status}\"
 print(output)
 '"
-    
+
     -- Display results
     display dialog "Parsed ORBCOMM Notification:" & return & return & parseResult buttons {"Copy to Clipboard", "OK"} default button "Copy to Clipboard" with icon note with title "Parse Results"
-    
+
     if button returned of result is "Copy to Clipboard" then
         set the clipboard to parseResult
         display notification "Results copied to clipboard" with title "ORBCOMM Parser"
     end if
-    
+
     -- Clean up
     do shell script "rm -f " & tempFile
 end parseORBCOMMEmail

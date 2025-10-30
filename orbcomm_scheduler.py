@@ -4,29 +4,26 @@ ORBCOMM Daily Scheduler
 Automated daily sync, archiving, and stats tracking
 """
 
-import sys
 import logging
-from pathlib import Path
+import sys
 from datetime import datetime
+from pathlib import Path
 
 # Add project to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from orbcomm_tracker.sync import SyncOrchestrator
+from orbcomm_tracker.sync import SyncOrchestrator  # noqa: E402
 
 # Configure logging to file
-log_dir = Path.home() / '.orbcomm' / 'logs'
+log_dir = Path.home() / ".orbcomm" / "logs"
 log_dir.mkdir(parents=True, exist_ok=True)
 
 log_file = log_dir / f"sync_{datetime.now().strftime('%Y%m%d')}.log"
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file),
-        logging.StreamHandler()
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler(log_file), logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
 
@@ -74,7 +71,9 @@ def run_daily_sync(inbox_number: int = 2):
         logger.info(f"  Total notifications: {status['total_notifications']}")
         logger.info(f"  Open: {status['open_count']}")
         logger.info(f"  Resolved: {status['resolved_count']}")
-        logger.info(f"  Avg resolution: {status['avg_resolution_time_minutes']:.1f} minutes")
+        logger.info(
+            f"  Avg resolution: {status['avg_resolution_time_minutes']:.1f} minutes"
+        )
         logger.info("=" * 70)
 
         # Database maintenance (vacuum)
@@ -111,5 +110,5 @@ def main():
     return run_daily_sync(inbox_number)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exit(main())

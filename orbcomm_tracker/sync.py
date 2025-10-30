@@ -3,9 +3,9 @@ Sync Orchestrator for ORBCOMM Tracker
 Coordinates Gmail API, parsing, and database operations
 """
 
+import logging
 from datetime import datetime, timedelta
 from typing import Dict, Optional
-import logging
 
 from orbcomm_tracker.database import Database
 from orbcomm_tracker.gmail_api import GmailAPI
@@ -46,11 +46,12 @@ class SyncOrchestrator:
         # Check if inbox is marked as historical_complete
         if not force:
             is_historical_complete = self.db.get_config(
-                f'inbox{self.inbox_number}_historical_complete',
-                default='false'
+                f"inbox{self.inbox_number}_historical_complete", default="false"
             )
-            if is_historical_complete == 'true':
-                logger.info(f"Inbox {self.inbox_number} marked as historical_complete, using continuous sync")
+            if is_historical_complete == "true":
+                logger.info(
+                    f"Inbox {self.inbox_number} marked as historical_complete, using continuous sync"
+                )
 
         # Start sync logging
         sync_id = self.db.log_sync_start(self.inbox_source)
@@ -79,15 +80,15 @@ class SyncOrchestrator:
                     emails_fetched=0,
                     emails_parsed=0,
                     errors_count=0,
-                    status='success'
+                    status="success",
                 )
                 return {
-                    'status': 'success',
-                    'emails_fetched': 0,
-                    'emails_stored': 0,
-                    'duplicates': 0,
-                    'errors': 0,
-                    'pairs_linked': 0
+                    "status": "success",
+                    "emails_fetched": 0,
+                    "emails_stored": 0,
+                    "duplicates": 0,
+                    "errors": 0,
+                    "pairs_linked": 0,
                 }
 
             # Parse and store
@@ -96,7 +97,7 @@ class SyncOrchestrator:
 
             # Link notification pairs
             pairs_linked = 0
-            if counts['stored'] > 0:
+            if counts["stored"] > 0:
                 logger.info("Linking notification pairs...")
                 pairs_linked = self.parser.link_all_pairs(self.inbox_source)
 
@@ -104,18 +105,18 @@ class SyncOrchestrator:
             self.db.log_sync_complete(
                 sync_id=sync_id,
                 emails_fetched=len(emails),
-                emails_parsed=counts['stored'],
-                errors_count=counts['errors'],
-                status='success' if counts['errors'] == 0 else 'partial'
+                emails_parsed=counts["stored"],
+                errors_count=counts["errors"],
+                status="success" if counts["errors"] == 0 else "partial",
             )
 
             result = {
-                'status': 'success' if counts['errors'] == 0 else 'partial',
-                'emails_fetched': len(emails),
-                'emails_stored': counts['stored'],
-                'duplicates': counts['duplicates'],
-                'errors': counts['errors'],
-                'pairs_linked': pairs_linked
+                "status": "success" if counts["errors"] == 0 else "partial",
+                "emails_fetched": len(emails),
+                "emails_stored": counts["stored"],
+                "duplicates": counts["duplicates"],
+                "errors": counts["errors"],
+                "pairs_linked": pairs_linked,
             }
 
             logger.info(f"Sync complete: {result}")
@@ -128,8 +129,8 @@ class SyncOrchestrator:
                 emails_fetched=0,
                 emails_parsed=0,
                 errors_count=1,
-                status='failed',
-                error_log=str(e)
+                status="failed",
+                error_log=str(e),
             )
             raise
 
@@ -144,13 +145,13 @@ class SyncOrchestrator:
         stats = self.db.get_current_stats()
 
         return {
-            'inbox_number': self.inbox_number,
-            'inbox_source': self.inbox_source,
-            'last_sync': last_sync.isoformat() if last_sync else None,
-            'total_notifications': stats['total_notifications'],
-            'open_count': stats['open_count'],
-            'resolved_count': stats['resolved_count'],
-            'avg_resolution_time_minutes': stats['avg_resolution_time_minutes']
+            "inbox_number": self.inbox_number,
+            "inbox_source": self.inbox_source,
+            "last_sync": last_sync.isoformat() if last_sync else None,
+            "total_notifications": stats["total_notifications"],
+            "open_count": stats["open_count"],
+            "resolved_count": stats["resolved_count"],
+            "avg_resolution_time_minutes": stats["avg_resolution_time_minutes"],
         }
 
     def archive_old_notifications(self, days: int = 180) -> int:

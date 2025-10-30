@@ -5,14 +5,22 @@ Provides health checks, metrics, and monitoring endpoints
 
 import os
 import time
-import psutil
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional
-from flask import jsonify, Response
+from typing import Any, Dict
+
+import psutil
+from flask import Response, jsonify
 
 try:
-    from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
+    from prometheus_client import (
+        CONTENT_TYPE_LATEST,
+        Counter,
+        Gauge,
+        Histogram,
+        generate_latest,
+    )
+
     PROMETHEUS_AVAILABLE = True
 except ImportError:
     PROMETHEUS_AVAILABLE = False
@@ -26,6 +34,7 @@ class HealthCheck:
         """Check database connectivity and health"""
         try:
             import sqlite3
+
             conn = sqlite3.connect(db_path, timeout=5)
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM notifications")
@@ -35,13 +44,13 @@ class HealthCheck:
             return {
                 "status": "healthy",
                 "message": f"Database accessible ({count} notifications)",
-                "response_time_ms": 0
+                "response_time_ms": 0,
             }
         except Exception as e:
             return {
                 "status": "unhealthy",
                 "message": f"Database error: {str(e)}",
-                "response_time_ms": 0
+                "response_time_ms": 0,
             }
 
     @staticmethod
@@ -55,14 +64,14 @@ class HealthCheck:
                 "status": "healthy" if is_healthy else "warning",
                 "message": f"Disk usage: {usage.percent}% ({usage.free / (1024**3):.2f} GB free)",
                 "percent_used": usage.percent,
-                "free_gb": usage.free / (1024**3)
+                "free_gb": usage.free / (1024**3),
             }
         except Exception as e:
             return {
                 "status": "unhealthy",
                 "message": f"Disk check error: {str(e)}",
                 "percent_used": 0,
-                "free_gb": 0
+                "free_gb": 0,
             }
 
     @staticmethod
@@ -76,14 +85,14 @@ class HealthCheck:
                 "status": "healthy" if is_healthy else "warning",
                 "message": f"Memory usage: {memory.percent}% ({memory.available / (1024**3):.2f} GB available)",
                 "percent_used": memory.percent,
-                "available_gb": memory.available / (1024**3)
+                "available_gb": memory.available / (1024**3),
             }
         except Exception as e:
             return {
                 "status": "unhealthy",
                 "message": f"Memory check error: {str(e)}",
                 "percent_used": 0,
-                "available_gb": 0
+                "available_gb": 0,
             }
 
     @staticmethod
@@ -110,14 +119,14 @@ class HealthCheck:
                 "status": status,
                 "message": message,
                 "credentials_exist": has_creds,
-                "token_exists": has_token
+                "token_exists": has_token,
             }
         except Exception as e:
             return {
                 "status": "unhealthy",
                 "message": f"Credentials check error: {str(e)}",
                 "credentials_exist": False,
-                "token_exists": False
+                "token_exists": False,
             }
 
 
@@ -130,53 +139,41 @@ class Metrics:
 
         # Request metrics
         self.request_count = Counter(
-            'orbcomm_requests_total',
-            'Total request count',
-            ['method', 'endpoint', 'status']
+            "orbcomm_requests_total",
+            "Total request count",
+            ["method", "endpoint", "status"],
         )
 
         self.request_duration = Histogram(
-            'orbcomm_request_duration_seconds',
-            'Request duration in seconds',
-            ['method', 'endpoint']
+            "orbcomm_request_duration_seconds",
+            "Request duration in seconds",
+            ["method", "endpoint"],
         )
 
         # Email sync metrics
         self.emails_fetched = Counter(
-            'orbcomm_emails_fetched_total',
-            'Total emails fetched',
-            ['inbox']
+            "orbcomm_emails_fetched_total", "Total emails fetched", ["inbox"]
         )
 
         self.emails_parsed = Counter(
-            'orbcomm_emails_parsed_total',
-            'Total emails parsed',
-            ['inbox', 'status']
+            "orbcomm_emails_parsed_total", "Total emails parsed", ["inbox", "status"]
         )
 
         # Database metrics
         self.db_query_duration = Histogram(
-            'orbcomm_db_query_duration_seconds',
-            'Database query duration in seconds',
-            ['operation']
+            "orbcomm_db_query_duration_seconds",
+            "Database query duration in seconds",
+            ["operation"],
         )
 
         self.notification_count = Gauge(
-            'orbcomm_notifications_total',
-            'Total number of notifications',
-            ['status']
+            "orbcomm_notifications_total", "Total number of notifications", ["status"]
         )
 
         # System metrics
-        self.memory_usage = Gauge(
-            'orbcomm_memory_usage_bytes',
-            'Memory usage in bytes'
-        )
+        self.memory_usage = Gauge("orbcomm_memory_usage_bytes", "Memory usage in bytes")
 
-        self.disk_usage = Gauge(
-            'orbcomm_disk_usage_percent',
-            'Disk usage percentage'
-        )
+        self.disk_usage = Gauge("orbcomm_disk_usage_percent", "Disk usage percentage")
 
     def record_request(self, method: str, endpoint: str, status: int, duration: float):
         """Record HTTP request metrics"""
@@ -193,8 +190,7 @@ class Metrics:
 
         self.emails_fetched.labels(inbox=inbox).inc(fetched)
         self.emails_parsed.labels(
-            inbox=inbox,
-            status='success' if success else 'failure'
+            inbox=inbox, status="success" if success else "failure"
         ).inc(parsed)
 
     def update_system_metrics(self):
@@ -205,7 +201,7 @@ class Metrics:
         memory = psutil.virtual_memory()
         self.memory_usage.set(memory.used)
 
-        disk = psutil.disk_usage('/')
+        disk = psutil.disk_usage("/")
         self.disk_usage.set(disk.percent)
 
 
@@ -216,24 +212,29 @@ metrics = Metrics()
 def register_health_routes(app, db_path: str, data_dir: str):
     """Register health check and monitoring routes to Flask app"""
 
-    @app.route('/health')
+    @app.route("/health")
     def health_check():
         """Basic health check endpoint"""
-        return jsonify({
-            "status": "healthy",
-            "timestamp": datetime.utcnow().isoformat(),
-            "service": "ORBCOMM Service Tracker",
-            "version": "1.1.0"
-        }), 200
+        return (
+            jsonify(
+                {
+                    "status": "healthy",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "service": "ORBCOMM Service Tracker",
+                    "version": "1.1.0",
+                }
+            ),
+            200,
+        )
 
-    @app.route('/health/detailed')
+    @app.route("/health/detailed")
     def health_check_detailed():
         """Detailed health check with component status"""
         checks = {
             "database": HealthCheck.check_database(db_path),
             "disk": HealthCheck.check_disk_space(data_dir),
             "memory": HealthCheck.check_memory(),
-            "credentials": HealthCheck.check_credentials(data_dir)
+            "credentials": HealthCheck.check_credentials(data_dir),
         }
 
         # Overall health is unhealthy if any component is unhealthy
@@ -241,14 +242,19 @@ def register_health_routes(app, db_path: str, data_dir: str):
             check["status"] != "unhealthy" for check in checks.values()
         )
 
-        return jsonify({
-            "status": "healthy" if overall_healthy else "unhealthy",
-            "timestamp": datetime.utcnow().isoformat(),
-            "checks": checks,
-            "uptime_seconds": time.process_time()
-        }), 200 if overall_healthy else 503
+        return (
+            jsonify(
+                {
+                    "status": "healthy" if overall_healthy else "unhealthy",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "checks": checks,
+                    "uptime_seconds": time.process_time(),
+                }
+            ),
+            200 if overall_healthy else 503,
+        )
 
-    @app.route('/health/ready')
+    @app.route("/health/ready")
     def readiness_check():
         """Kubernetes readiness probe"""
         try:
@@ -256,53 +262,64 @@ def register_health_routes(app, db_path: str, data_dir: str):
             db_check = HealthCheck.check_database(db_path)
             is_ready = db_check["status"] == "healthy"
 
-            return jsonify({
-                "ready": is_ready,
-                "timestamp": datetime.utcnow().isoformat()
-            }), 200 if is_ready else 503
+            return (
+                jsonify(
+                    {"ready": is_ready, "timestamp": datetime.utcnow().isoformat()}
+                ),
+                200 if is_ready else 503,
+            )
         except Exception as e:
-            return jsonify({
-                "ready": False,
-                "error": str(e),
-                "timestamp": datetime.utcnow().isoformat()
-            }), 503
+            return (
+                jsonify(
+                    {
+                        "ready": False,
+                        "error": str(e),
+                        "timestamp": datetime.utcnow().isoformat(),
+                    }
+                ),
+                503,
+            )
 
-    @app.route('/health/live')
+    @app.route("/health/live")
     def liveness_check():
         """Kubernetes liveness probe"""
-        return jsonify({
-            "alive": True,
-            "timestamp": datetime.utcnow().isoformat()
-        }), 200
+        return jsonify({"alive": True, "timestamp": datetime.utcnow().isoformat()}), 200
 
-    @app.route('/metrics')
+    @app.route("/metrics")
     def prometheus_metrics():
         """Prometheus metrics endpoint"""
         if not PROMETHEUS_AVAILABLE:
-            return jsonify({
-                "error": "Prometheus client not available",
-                "message": "Install prometheus-client package"
-            }), 501
+            return (
+                jsonify(
+                    {
+                        "error": "Prometheus client not available",
+                        "message": "Install prometheus-client package",
+                    }
+                ),
+                501,
+            )
 
         # Update system metrics before generating output
         metrics.update_system_metrics()
 
-        return Response(
-            generate_latest(),
-            mimetype=CONTENT_TYPE_LATEST
-        )
+        return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
 
-    @app.route('/info')
+    @app.route("/info")
     def app_info():
         """Application information endpoint"""
-        return jsonify({
-            "name": "ORBCOMM Service Tracker",
-            "version": "1.1.0",
-            "description": "Email notification monitoring and analytics",
-            "environment": os.environ.get("FLASK_ENV", "production"),
-            "python_version": os.sys.version,
-            "timestamp": datetime.utcnow().isoformat()
-        }), 200
+        return (
+            jsonify(
+                {
+                    "name": "ORBCOMM Service Tracker",
+                    "version": "1.1.0",
+                    "description": "Email notification monitoring and analytics",
+                    "environment": os.environ.get("FLASK_ENV", "production"),
+                    "python_version": os.sys.version,
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+            ),
+            200,
+        )
 
 
 def setup_request_logging(app):
@@ -312,6 +329,7 @@ def setup_request_logging(app):
     def before_request():
         """Record request start time"""
         from flask import g
+
         g.start_time = time.time()
 
     @app.after_request
@@ -319,13 +337,13 @@ def setup_request_logging(app):
         """Log request metrics"""
         from flask import g, request
 
-        if hasattr(g, 'start_time'):
+        if hasattr(g, "start_time"):
             duration = time.time() - g.start_time
             metrics.record_request(
                 method=request.method,
-                endpoint=request.endpoint or 'unknown',
+                endpoint=request.endpoint or "unknown",
                 status=response.status_code,
-                duration=duration
+                duration=duration,
             )
 
         return response

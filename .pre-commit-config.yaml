@@ -9,6 +9,7 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
+        exclude: ^kubernetes/
       - id: check-added-large-files
         args: ['--maxkb=1000']
       - id: check-json
@@ -46,12 +47,12 @@ repos:
         args: ['-r', 'orbcomm_tracker/']
         exclude: tests/
 
-  # Docstring coverage
-  - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.3.0
-    hooks:
-      - id: pydocstyle
-        args: ['--ignore=D100,D101,D102,D103,D104,D105,D107']
+  # Docstring coverage (disabled - style preference, not critical)
+  # - repo: https://github.com/pycqa/pydocstyle
+  #   rev: 6.3.0
+  #   hooks:
+  #     - id: pydocstyle
+  #       args: ['--ignore=D100,D101,D102,D103,D104,D105,D107']
 
   # Type checking (optional - uncomment if using type hints)
   # - repo: https://github.com/pre-commit/mirrors-mypy

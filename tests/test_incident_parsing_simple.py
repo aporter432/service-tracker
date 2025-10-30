@@ -5,14 +5,14 @@ Simplified unit tests for incident time parsing from ORBCOMM emails.
 Tests focus on the incident duration extraction feature added in v1.1.0.
 """
 
-import unittest
-import sys
 import os
+import sys
+import unittest
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from orbcomm_processor import SimpleORBCOMMParser
+from orbcomm_processor import SimpleORBCOMMParser  # noqa: E402
 
 
 class TestIncidentDurationFeature(unittest.TestCase):
@@ -38,14 +38,14 @@ class TestIncidentDurationFeature(unittest.TestCase):
         result = self.parser.parse_text(body, subject=subject)
 
         # Verify basic parsing
-        self.assertEqual(result['reference_number'], 'S-003141')
-        self.assertEqual(result['status'], 'Resolved')
-        self.assertEqual(result['platform'], 'IDP')
+        self.assertEqual(result["reference_number"], "S-003141")
+        self.assertEqual(result["status"], "Resolved")
+        self.assertEqual(result["platform"], "IDP")
 
         # Verify incident duration extraction
-        self.assertEqual(result['incident_start_time'], '2025-10-22 15:05:00')
-        self.assertEqual(result['incident_end_time'], '2025-10-23 00:37:00')
-        self.assertEqual(result['incident_duration_minutes'], 572)
+        self.assertEqual(result["incident_start_time"], "2025-10-22 15:05:00")
+        self.assertEqual(result["incident_end_time"], "2025-10-23 00:37:00")
+        self.assertEqual(result["incident_duration_minutes"], 572)
 
     def test_real_world_m003128_with_subject(self):
         """Test M-003128 incident (1 hour duration)."""
@@ -61,8 +61,8 @@ class TestIncidentDurationFeature(unittest.TestCase):
 
         result = self.parser.parse_text(body, subject=subject)
 
-        self.assertEqual(result['reference_number'], 'M-003128')
-        self.assertEqual(result['incident_duration_minutes'], 60)
+        self.assertEqual(result["reference_number"], "M-003128")
+        self.assertEqual(result["incident_duration_minutes"], 60)
 
     def test_resolved_without_incident_times(self):
         """Test backward compatibility - resolved email without incident times."""
@@ -77,10 +77,10 @@ class TestIncidentDurationFeature(unittest.TestCase):
 
         result = self.parser.parse_text(body, subject=subject)
 
-        self.assertEqual(result['status'], 'Resolved')
-        self.assertIsNone(result['incident_start_time'])
-        self.assertIsNone(result['incident_end_time'])
-        self.assertIsNone(result['incident_duration_minutes'])
+        self.assertEqual(result["status"], "Resolved")
+        self.assertIsNone(result["incident_start_time"])
+        self.assertIsNone(result["incident_end_time"])
+        self.assertIsNone(result["incident_duration_minutes"])
 
     def test_open_notification_no_times(self):
         """Test open notification doesn't extract incident times."""
@@ -95,10 +95,10 @@ class TestIncidentDurationFeature(unittest.TestCase):
 
         result = self.parser.parse_text(body, subject=subject)
 
-        self.assertEqual(result['status'], 'Open')
-        self.assertIsNone(result['incident_start_time'])
-        self.assertIsNone(result['incident_end_time'])
-        self.assertIsNone(result['incident_duration_minutes'])
+        self.assertEqual(result["status"], "Open")
+        self.assertIsNone(result["incident_start_time"])
+        self.assertIsNone(result["incident_end_time"])
+        self.assertIsNone(result["incident_duration_minutes"])
 
     def test_malformed_start_time_graceful(self):
         """Test graceful handling of malformed start time."""
@@ -113,10 +113,10 @@ class TestIncidentDurationFeature(unittest.TestCase):
 
         result = self.parser.parse_text(body, subject=subject)
 
-        self.assertEqual(result['status'], 'Resolved')
-        self.assertIsNone(result['incident_start_time'])
-        self.assertEqual(result['incident_end_time'], '2025-10-20 14:00:00')
-        self.assertIsNone(result['incident_duration_minutes'])
+        self.assertEqual(result["status"], "Resolved")
+        self.assertIsNone(result["incident_start_time"])
+        self.assertEqual(result["incident_end_time"], "2025-10-20 14:00:00")
+        self.assertIsNone(result["incident_duration_minutes"])
 
     def test_multiday_incident_duration(self):
         """Test incident spanning multiple days."""
@@ -131,7 +131,7 @@ class TestIncidentDurationFeature(unittest.TestCase):
 
         result = self.parser.parse_text(body, subject=subject)
 
-        self.assertEqual(result['incident_duration_minutes'], 1560)  # 26 hours
+        self.assertEqual(result["incident_duration_minutes"], 1560)  # 26 hours
 
     def test_whitespace_variations_in_html(self):
         """Test parsing with extra whitespace."""
@@ -146,8 +146,8 @@ class TestIncidentDurationFeature(unittest.TestCase):
 
         result = self.parser.parse_text(body, subject=subject)
 
-        self.assertEqual(result['incident_start_time'], '2025-10-20 10:00:00')
-        self.assertEqual(result['incident_duration_minutes'], 120)
+        self.assertEqual(result["incident_start_time"], "2025-10-20 10:00:00")
+        self.assertEqual(result["incident_duration_minutes"], 120)
 
 
 def run_tests():
@@ -159,5 +159,5 @@ def run_tests():
     return 0 if result.wasSuccessful() else 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(run_tests())

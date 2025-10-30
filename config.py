@@ -21,9 +21,7 @@ class Config:
     TESTING = False
 
     # Data directory
-    ORBCOMM_DATA_DIR = os.environ.get(
-        "ORBCOMM_DATA_DIR", str(Path.home() / ".orbcomm")
-    )
+    ORBCOMM_DATA_DIR = os.environ.get("ORBCOMM_DATA_DIR", str(Path.home() / ".orbcomm"))
 
     # Database
     DATABASE_PATH = os.environ.get(
@@ -153,9 +151,7 @@ class ProductionConfig(Config):
     METRICS_ENABLED = True
 
     # Strict CORS
-    CORS_ORIGINS = os.environ.get(
-        "CORS_ORIGINS", "https://orbcomm-tracker.example.com"
-    )
+    CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "https://orbcomm-tracker.example.com")
 
     @classmethod
     def init_app(cls, app):
