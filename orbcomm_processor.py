@@ -26,9 +26,7 @@ class SimpleORBCOMMParser:
         self.data = []
         self.reference_counter = {}
 
-    def parse_text(  # noqa: C901
-        self, text: str, subject: str = "", email_date: str = None
-    ) -> Dict:
+    def parse_text(self, text: str, subject: str = "", email_date: str = None) -> Dict:
         """Parse notification text and extract key information.
 
         Args:
@@ -119,7 +117,7 @@ class SimpleORBCOMMParser:
                 # Get everything after "Summary:"
                 summary_start = text.lower().find("summary:")
                 if summary_start != -1:
-                    result["summary"] = text[summary_start + 8 :].strip()  # noqa: E203
+                    result["summary"] = text[summary_start + 8 :].strip()
 
                     # Extract date and time from summary
                     summary_text = result["summary"]
@@ -252,8 +250,7 @@ class SimpleORBCOMMParser:
             elif result["incident_start_time"] or result["incident_end_time"]:
                 # One time is present but not both
                 logger.warning(
-                    f"[{ref_num}] Incomplete incident times - "  # noqa: E501
-                    f"start: {result['incident_start_time']}, end: {result['incident_end_time']}"
+                    f"[{ref_num}] Incomplete incident times - start: {result['incident_start_time']}, end: {result['incident_end_time']}"  # noqa: E501
                 )
 
         return result
@@ -375,7 +372,7 @@ class SimpleORBCOMMParser:
         print("=" * 60)
 
 
-def interactive_mode():  # noqa: C901
+def interactive_mode():
     """Run the parser in interactive mode."""
     parser = SimpleORBCOMMParser()
 
@@ -410,8 +407,7 @@ def interactive_mode():  # noqa: C901
             if text:
                 result = parser.add_notification(text, subject)
                 print(
-                    f"\n✅ Added notification: {result.get('reference_number', 'No ref#')} - "  # noqa: E501
-                    f"{result.get('event_type', 'Unknown event')}"
+                    f"\n✅ Added notification: {result.get('reference_number', 'No ref#')} - {result.get('event_type', 'Unknown event')}"  # noqa: E501
                 )
 
         elif choice == "2":

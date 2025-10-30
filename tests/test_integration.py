@@ -143,7 +143,7 @@ class TestConfigurationManagement:
 
     def test_config_loading(self):
         """Test configuration loading"""
-        from config import get_config  # noqa: F401
+        from config import get_config
 
         # Test development config
         dev_config = get_config("development")

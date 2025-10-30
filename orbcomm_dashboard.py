@@ -52,7 +52,7 @@ def format_date(date_str):
     try:
         dt = datetime.fromisoformat(date_str)
         return dt.strftime("%b %d, %Y %H:%M")
-    except (ValueError, AttributeError):
+    except Exception:
         return date_str
 
 
