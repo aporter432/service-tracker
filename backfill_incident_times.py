@@ -130,9 +130,10 @@ def backfill_incident_times():
         logger.info(
             f"  Average email processing time: {stats['avg_email_time']:.1f} minutes ({stats['avg_email_time']/60:.1f} hours)"
         )
+        avg_time = stats["avg_incident_time"]
         logger.info(
-            f"  Average incident duration: {stats['avg_incident_time']:.1f} minutes "
-            f"({stats['avg_incident_time']/60:.1f} hours)"
+            f"  Average incident duration: {avg_time:.1f} minutes "
+            f"({avg_time/60:.1f} hours)"
         )
 
         time_difference = stats["avg_email_time"] - stats["avg_incident_time"]

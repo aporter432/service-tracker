@@ -190,10 +190,7 @@ class ORBCOMMParserApp:
         ).grid(row=0, column=0, padx=5)
 
         ttk.Button(
-            export_frame,
-            text="📊 Copy for Excel",
-            command=self.copy_for_excel,
-            width=15,
+            export_frame, text="📊 Copy for Excel", command=self.copy_for_excel, width=15
         ).grid(row=0, column=1, padx=5)
 
         ttk.Button(
@@ -235,7 +232,7 @@ class ORBCOMMParserApp:
             "Success", f"Successfully parsed {len(emails)} notification(s)!"
         )
 
-    def parse_notification_text(self, text, subject):  # noqa: C901
+    def parse_notification_text(self, text, subject):
         """Parse ORBCOMM notification text."""
         result = {
             "reference_number": "",
@@ -336,7 +333,7 @@ class ORBCOMMParserApp:
             self.email_text.delete(1.0, tk.END)
             self.email_text.insert(1.0, clipboard_text)
             self.status_var.set("Pasted from clipboard")
-        except tk.TclError:
+        except Exception:
             messagebox.showerror("Error", "Could not paste from clipboard")
 
     def clear_all(self):
@@ -452,7 +449,7 @@ Summary: Dear ORBCOMM Partner, We will be conducting scheduled maintenance of th
         try:
             subprocess.run(["code", temp_file])
             self.status_var.set("Opened in VS Code")
-        except (FileNotFoundError, subprocess.SubprocessError):
+        except Exception:
             messagebox.showerror(
                 "Error", "Could not open VS Code. Is it installed and in PATH?"
             )
@@ -516,7 +513,7 @@ def main():
         except Exception:
             pass
 
-    _app = ORBCOMMParserApp(root)  # noqa: F841
+    _ = ORBCOMMParserApp(root)  # noqa: F841
     root.mainloop()
 
 
