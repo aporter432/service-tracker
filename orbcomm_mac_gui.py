@@ -190,7 +190,10 @@ class ORBCOMMParserApp:
         ).grid(row=0, column=0, padx=5)
 
         ttk.Button(
-            export_frame, text="📊 Copy for Excel", command=self.copy_for_excel, width=15
+            export_frame,
+            text="📊 Copy for Excel",
+            command=self.copy_for_excel,
+            width=15,
         ).grid(row=0, column=1, padx=5)
 
         ttk.Button(

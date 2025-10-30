@@ -539,9 +539,9 @@ class Database:
         platform_incident_stats = {
             row["platform"]: {
                 "count": row["count"],
-                "avg_duration": round(row["avg_duration"], 2)
-                if row["avg_duration"]
-                else 0,
+                "avg_duration": (
+                    round(row["avg_duration"], 2) if row["avg_duration"] else 0
+                ),
                 "total_duration": row["total_duration"] or 0,
             }
             for row in cursor.fetchall()
