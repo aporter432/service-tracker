@@ -29,8 +29,13 @@ def main():
     parser.add_argument(
         "--inbox",
         type=int,
-        default=2,
-        help="Inbox number to sync (default: 2 for continuous monitoring)",
+        default=None,
+        help="Inbox number to sync (if not specified with --all, defaults to 2)",
+    )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Sync all authenticated inboxes (1 and 2)",
     )
     parser.add_argument(
         "--days",
@@ -54,31 +59,47 @@ def main():
 
     args = parser.parse_args()
 
+    # Determine which inboxes to sync
+    if args.all:
+        inbox_numbers = [1, 2]
+    elif args.inbox is not None:
+        inbox_numbers = [args.inbox]
+    else:
+        inbox_numbers = [2]  # Default to inbox 2 for backward compatibility
+
     print("=" * 70)
-    print(f"  ORBCOMM Sync - Inbox {args.inbox}")
+    if len(inbox_numbers) > 1:
+        print(f"  ORBCOMM Sync - Inboxes {', '.join(map(str, inbox_numbers))}")
+    else:
+        print(f"  ORBCOMM Sync - Inbox {inbox_numbers[0]}")
     print("=" * 70)
     print()
 
     try:
-        # Initialize sync orchestrator
-        sync = SyncOrchestrator(args.inbox)
+        all_results = {}
+        failed_inboxes = []
 
         # Status only mode
         if args.status:
-            status = sync.get_sync_status()
-            print("📊 Current Status")
-            print("-" * 70)
-            print(
-                f"Inbox:                  {status['inbox_number']} ({status['inbox_source']})"
-            )
-            print(f"Last sync:              {status['last_sync'] or 'Never'}")
-            print(f"Total notifications:    {status['total_notifications']}")
-            print(f"Open:                   {status['open_count']}")
-            print(f"Resolved:               {status['resolved_count']}")
-            print(
-                f"Avg resolution time:    {status['avg_resolution_time_minutes']:.1f} minutes"
-            )
-            print()
+            for inbox_num in inbox_numbers:
+                try:
+                    sync = SyncOrchestrator(inbox_num)
+                    status = sync.get_sync_status()
+                    print(f"📊 Inbox {inbox_num} Status")
+                    print("-" * 70)
+                    print(f"Source:                 {status['inbox_source']}")
+                    print(f"Last sync:              {status['last_sync'] or 'Never'}")
+                    print(f"Total notifications:    {status['total_notifications']}")
+                    print(f"Open:                   {status['open_count']}")
+                    print(f"Resolved:               {status['resolved_count']}")
+                    print(
+                        f"Avg resolution time:    {status['avg_resolution_time_minutes']:.1f} minutes"
+                    )
+                    print()
+                    sync.close()
+                except FileNotFoundError:
+                    print(f"⚠️  Inbox {inbox_num} not authenticated")
+                    print()
             return 0
 
         # Determine since_date
@@ -90,49 +111,96 @@ def main():
             )
             print()
 
-        # Run sync
-        print("🔄 Starting sync...")
-        print()
-        result = sync.sync(since_date=since_date, force=args.force)
+        # Run sync for each inbox
+        for inbox_num in inbox_numbers:
+            try:
+                print("=" * 70)
+                print(f"🔄 Starting sync for Inbox {inbox_num}...")
+                print("=" * 70)
+                print()
 
-        # Display results
-        print()
-        print("=" * 70)
-        print("  Sync Results")
-        print("=" * 70)
-        print(f"Status:           {result['status'].upper()}")
-        print(f"Emails fetched:   {result['emails_fetched']}")
-        print(f"Emails stored:    {result['emails_stored']}")
-        print(f"Duplicates:       {result['duplicates']}")
-        print(f"Errors:           {result['errors']}")
-        print(f"Pairs linked:     {result['pairs_linked']}")
-        print()
+                sync = SyncOrchestrator(inbox_num)
+                result = sync.sync(since_date=since_date, force=args.force)
+                all_results[inbox_num] = result
 
-        # Archive old notifications if requested
-        if args.archive:
-            print(f"📦 Archiving notifications older than {args.archive} days...")
-            archived = sync.archive_old_notifications(args.archive)
-            print(f"✅ Archived {archived} notifications")
+                # Display results
+                print()
+                print("-" * 70)
+                print(f"  Inbox {inbox_num} Sync Results")
+                print("-" * 70)
+                print(f"Status:           {result['status'].upper()}")
+                print(f"Emails fetched:   {result['emails_fetched']}")
+                print(f"Emails stored:    {result['emails_stored']}")
+                print(f"Duplicates:       {result['duplicates']}")
+                print(f"Errors:           {result['errors']}")
+                print(f"Pairs linked:     {result['pairs_linked']}")
+                print()
+
+                sync.close()
+
+            except FileNotFoundError as e:
+                print(f"❌ Error: {e}")
+                print(f"⚠️  Skipping inbox {inbox_num} - not authenticated")
+                print()
+                failed_inboxes.append(inbox_num)
+                continue
+            except Exception as e:
+                logger.error(f"Inbox {inbox_num} sync failed: {e}", exc_info=True)
+                print(f"❌ Inbox {inbox_num} sync failed: {e}")
+                print()
+                failed_inboxes.append(inbox_num)
+                continue
+
+        # If all inboxes failed, exit with error
+        if len(failed_inboxes) == len(inbox_numbers):
+            print("❌ All inboxes failed to sync")
+            return 1
+
+        # Post-sync operations (using first successful inbox)
+        successful_inboxes = [i for i in inbox_numbers if i not in failed_inboxes]
+        if successful_inboxes:
+            sync = SyncOrchestrator(successful_inboxes[0])
+
+            # Archive old notifications if requested
+            if args.archive:
+                print(f"📦 Archiving notifications older than {args.archive} days...")
+                archived = sync.archive_old_notifications(args.archive)
+                print(f"✅ Archived {archived} notifications")
+                print()
+
+            # Save stats snapshot if requested
+            if args.snapshot:
+                print("📸 Saving stats snapshot...")
+                sync.save_stats_snapshot()
+                print("✅ Snapshot saved")
+                print()
+
+            # Show current stats
+            status = sync.get_sync_status()
+            print("=" * 70)
+            print("  Current Database Stats")
+            print("=" * 70)
+            print(f"Total notifications:    {status['total_notifications']}")
+            print(f"Open:                   {status['open_count']}")
+            print(f"Resolved:               {status['resolved_count']}")
+            print(
+                f"Avg resolution time:    {status['avg_resolution_time_minutes']:.1f} minutes"
+            )
             print()
 
-        # Save stats snapshot if requested
-        if args.snapshot:
-            print("📸 Saving stats snapshot...")
-            sync.save_stats_snapshot()
-            print("✅ Snapshot saved")
-            print()
+            sync.close()
 
-        # Show current stats
-        status = sync.get_sync_status()
+        # Summary
         print("=" * 70)
-        print("  Current Database Stats")
+        print("  Sync Summary")
         print("=" * 70)
-        print(f"Total notifications:    {status['total_notifications']}")
-        print(f"Open:                   {status['open_count']}")
-        print(f"Resolved:               {status['resolved_count']}")
-        print(
-            f"Avg resolution time:    {status['avg_resolution_time_minutes']:.1f} minutes"
-        )
+        for inbox_num, result in all_results.items():
+            print(
+                f"Inbox {inbox_num}: {result['emails_fetched']} fetched, "
+                f"{result['emails_stored']} stored"
+            )
+        if failed_inboxes:
+            print(f"Failed: {', '.join(map(str, failed_inboxes))}")
         print()
 
         print("=" * 70)
@@ -140,17 +208,9 @@ def main():
         print("=" * 70)
         print()
 
-        sync.close()
-        return 0 if result["status"] == "success" else 1
+        # Return error if any inbox failed
+        return 0 if not failed_inboxes else 1
 
-    except FileNotFoundError as e:
-        print(f"❌ Error: {e}")
-        print()
-        print("Please authenticate inbox first:")
-        print(
-            f"  ./venv/bin/python3 setup_gmail_auth.py --inbox {args.inbox} --email YOUR_EMAIL"
-        )
-        return 1
     except Exception as e:
         logger.error(f"Sync failed: {e}", exc_info=True)
         print()
