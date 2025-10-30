@@ -26,9 +26,9 @@ class SimpleORBCOMMParser:
         self.data = []
         self.reference_counter = {}
 
-    def parse_text(
+    def parse_text(  # noqa: C901
         self, text: str, subject: str = "", email_date: str = None
-    ) -> Dict:  # noqa: C901
+    ) -> Dict:
         """Parse notification text and extract key information.
 
         Args:
@@ -119,7 +119,7 @@ class SimpleORBCOMMParser:
                 # Get everything after "Summary:"
                 summary_start = text.lower().find("summary:")
                 if summary_start != -1:
-                    result["summary"] = text[summary_start + 8 :].strip()
+                    result["summary"] = text[summary_start + 8 :].strip()  # noqa: E203
 
                     # Extract date and time from summary
                     summary_text = result["summary"]
