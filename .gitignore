@@ -20,6 +20,7 @@ __pycache__/
 credentials.json
 token.json
 *.json.backup
+RENDER_SETUP_CREDENTIALS.txt
 
 # Config
 config.yaml

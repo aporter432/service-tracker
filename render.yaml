@@ -1,0 +1,131 @@
+# Render deployment configuration for ORBCOMM Service Tracker
+# https://render.com/docs/infrastructure-as-code
+
+services:
+  # Web Dashboard Service
+  - type: web
+    name: orbcomm-dashboard
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter  # $7/month - can change to 'free' for testing
+    region: oregon  # Choose closest to your location
+
+    envVars:
+      # Flask configuration
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_APP
+        value: orbcomm_dashboard.py
+
+      # Database path (persistent disk)
+      - key: DATABASE_PATH
+        value: /app/data/tracker.db
+      - key: ORBCOMM_DATA_DIR
+        value: /app/data
+
+      # OAuth credentials (SET THESE IN RENDER DASHBOARD)
+      # Run locally: base64 ~/.orbcomm/inbox1/credentials.json
+      - key: INBOX1_CREDENTIALS
+        sync: false  # Don't sync from .env file
+      - key: INBOX1_TOKEN
+        sync: false
+      - key: INBOX2_CREDENTIALS
+        sync: false
+      - key: INBOX2_TOKEN
+        sync: false
+
+      # API key for /api/sync endpoint security
+      # Generate random: openssl rand -hex 32
+      - key: SYNC_API_KEY
+        generateValue: true  # Render auto-generates secure key
+
+    # Persistent disk for database storage
+    disk:
+      name: orbcomm-data
+      mountPath: /app/data
+      sizeGB: 1  # $0.25/GB/month
+
+    # Health check endpoint
+    healthCheckPath: /api/stats
+
+    # Auto-deploy from GitHub
+    autoDeploy: true
+
+  # Cron Job - Triggers sync every 24 hours
+  - type: cron
+    name: orbcomm-sync-cron
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    schedule: "0 */24 * * *"  # Every 24 hours (adjust as needed)
+    # Alternative schedules:
+    # "0 9 * * *"     - Daily at 9:00 AM UTC
+    # "0 0 * * *"     - Daily at midnight UTC
+    # "0 */12 * * *"  - Every 12 hours
+    region: oregon
+
+    # Cron job command - calls sync API endpoint
+    dockerCommand: >
+      sh -c '
+      echo "Starting scheduled sync at $(date)";
+      RESPONSE=$(curl -X POST
+        -H "X-API-Key: $SYNC_API_KEY"
+        -H "Content-Type: application/json"
+        --max-time 600
+        --silent
+        --show-error
+        http://orbcomm-dashboard:5000/api/sync);
+      echo "Sync response: $RESPONSE";
+      if echo "$RESPONSE" | grep -q "\"success\":true"; then
+        echo "Sync completed successfully";
+        exit 0;
+      else
+        echo "Sync failed or returned error";
+        exit 1;
+      fi
+      '
+
+    envVars:
+      # Sync API key (must match web service)
+      - key: SYNC_API_KEY
+        sync: true  # Sync from web service
+
+    # Note: Cron jobs cannot access persistent disks
+    # That's why we call the web service API instead
+
+# Database backup notes:
+# - Initial database loaded from database_backup.sql in Dockerfile
+# - To update production data:
+#   1. Export: sqlite3 ~/.orbcomm/tracker.db .dump > database_backup.sql
+#   2. Commit: git add database_backup.sql && git commit -m "Update database"
+#   3. Push: git push (triggers auto-deploy)
+#   4. Note: This will reload database from backup on next deploy
+
+# Cost breakdown (monthly):
+# - Web service (Starter): $7.00
+# - Persistent disk (1GB): $0.25
+# - Cron job: ~$0.01 (billed per-second when running)
+# - Total: ~$7.26/month
+
+# Setup instructions:
+# 1. Set environment variables in Render dashboard:
+#    - INBOX1_CREDENTIALS (base64)
+#    - INBOX1_TOKEN (base64)
+#    - INBOX2_CREDENTIALS (base64)
+#    - INBOX2_TOKEN (base64)
+#    - SYNC_API_KEY (auto-generated or manual)
+#
+# 2. Push to GitHub:
+#    git add render.yaml orbcomm_dashboard.py
+#    git commit -m "Add Render deployment with scheduled sync"
+#    git push
+#
+# 3. In Render dashboard:
+#    - Connect repository
+#    - Render auto-detects render.yaml
+#    - Set environment variables
+#    - Deploy
+#
+# 4. Monitor:
+#    - Check Render logs for cron job execution
+#    - Visit https://your-app.onrender.com to verify dashboard
+#    - Check /api/stats to see last_sync timestamp

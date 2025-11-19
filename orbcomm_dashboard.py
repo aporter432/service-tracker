@@ -239,13 +239,58 @@ def stats():
 
 @app.route("/api/sync", methods=["POST"])
 def api_sync():
-    """Trigger manual sync"""
-    try:
-        sync = SyncOrchestrator(inbox_number=2)
-        result = sync.sync()
-        sync.close()
+    """
+    Trigger manual sync for both inboxes
 
-        return jsonify({"success": True, "result": result})
+    Security: Requires SYNC_API_KEY environment variable or X-API-Key header
+    """
+    import os
+
+    # API key authentication
+    api_key = os.environ.get("SYNC_API_KEY")
+    if api_key:
+        request_key = (
+            request.headers.get("X-API-Key") or request.json.get("api_key")
+            if request.json
+            else None
+        )
+        if request_key != api_key:
+            return jsonify({"success": False, "error": "Unauthorized"}), 401
+
+    try:
+        results = {}
+        failed_inboxes = []
+
+        # Sync inbox 1
+        try:
+            sync1 = SyncOrchestrator(inbox_number=1)
+            results["inbox1"] = sync1.sync()
+            sync1.close()
+        except Exception as e:
+            results["inbox1"] = {"status": "error", "error": str(e)}
+            failed_inboxes.append(1)
+
+        # Sync inbox 2
+        try:
+            sync2 = SyncOrchestrator(inbox_number=2)
+            results["inbox2"] = sync2.sync()
+            sync2.close()
+        except Exception as e:
+            results["inbox2"] = {"status": "error", "error": str(e)}
+            failed_inboxes.append(2)
+
+        # Overall status
+        success = len(failed_inboxes) < 2  # Success if at least one inbox synced
+
+        return jsonify(
+            {
+                "success": success,
+                "results": results,
+                "failed_inboxes": failed_inboxes,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
+
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
