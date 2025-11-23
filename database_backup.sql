@@ -163,6 +163,10 @@ INSERT INTO stats_snapshots VALUES(19,'2025-11-17 15:00:02',54,4,20,10,1954.2899
 INSERT INTO stats_snapshots VALUES(20,'2025-11-18 15:00:06',54,4,20,10,1954.289999999999964,'{"IDP": 36, "OGx": 18}','{"": 54}');
 INSERT INTO stats_snapshots VALUES(21,'2025-11-19 15:00:06',54,4,20,10,1954.289999999999964,'{"IDP": 36, "OGx": 18}','{"": 54}');
 INSERT INTO stats_snapshots VALUES(22,'2025-11-19 18:15:16',61,3,23,12,2202.34999999999991,'{"IDP": 40, "OGx": 21}','{"": 61}');
+INSERT INTO stats_snapshots VALUES(23,'2025-11-20 15:00:04',61,3,23,12,2202.34999999999991,'{"IDP": 40, "OGx": 21}','{"": 61}');
+INSERT INTO stats_snapshots VALUES(24,'2025-11-21 15:00:07',61,3,23,12,2202.34999999999991,'{"IDP": 40, "OGx": 21}','{"": 61}');
+INSERT INTO stats_snapshots VALUES(25,'2025-11-22 15:00:03',61,3,23,12,2202.34999999999991,'{"IDP": 40, "OGx": 21}','{"": 61}');
+INSERT INTO stats_snapshots VALUES(26,'2025-11-23 15:00:03',61,3,23,12,2202.34999999999991,'{"IDP": 40, "OGx": 21}','{"": 61}');
 CREATE TABLE sync_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 sync_start DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -220,6 +224,18 @@ INSERT INTO sync_history VALUES(42,'2025-11-19 15:00:05','2025-11-19 15:00:05','
 INSERT INTO sync_history VALUES(43,'2025-11-19 15:00:05','2025-11-19 15:00:06','inbox2_continuous',0,0,0,NULL,'success',NULL);
 INSERT INTO sync_history VALUES(44,'2025-11-19 18:15:13','2025-11-19 18:15:15','inbox1_continuous',7,7,0,NULL,'success',NULL);
 INSERT INTO sync_history VALUES(45,'2025-11-19 18:15:15','2025-11-19 18:15:16','inbox2_continuous',0,0,0,NULL,'success',NULL);
+INSERT INTO sync_history VALUES(46,'2025-11-19 18:29:06','2025-11-19 18:29:07','inbox1_continuous',0,0,0,NULL,'success',NULL);
+INSERT INTO sync_history VALUES(47,'2025-11-19 18:29:07','2025-11-19 18:29:07','inbox2_continuous',0,0,0,NULL,'success',NULL);
+INSERT INTO sync_history VALUES(48,'2025-11-20 15:00:03','2025-11-20 15:00:04','inbox1_continuous',0,0,0,NULL,'success',NULL);
+INSERT INTO sync_history VALUES(49,'2025-11-20 15:00:04','2025-11-20 15:00:04','inbox2_continuous',0,0,0,NULL,'success',NULL);
+INSERT INTO sync_history VALUES(50,'2025-11-21 15:00:06','2025-11-21 15:00:07','inbox1_continuous',0,0,0,NULL,'success',NULL);
+INSERT INTO sync_history VALUES(51,'2025-11-21 15:00:07','2025-11-21 15:00:07','inbox2_continuous',0,0,0,NULL,'success',NULL);
+INSERT INTO sync_history VALUES(52,'2025-11-22 15:00:01','2025-11-22 15:00:01','inbox1_continuous',0,0,0,NULL,'success',NULL);
+INSERT INTO sync_history VALUES(53,'2025-11-22 15:00:01','2025-11-22 15:00:03','inbox2_continuous',2,0,0,NULL,'success',NULL);
+INSERT INTO sync_history VALUES(54,'2025-11-23 15:00:01','2025-11-23 15:00:02','inbox1_continuous',0,0,0,NULL,'success',NULL);
+INSERT INTO sync_history VALUES(55,'2025-11-23 15:00:02','2025-11-23 15:00:03','inbox2_continuous',1,0,0,NULL,'success',NULL);
+INSERT INTO sync_history VALUES(56,'2025-11-23 23:36:36','2025-11-23 23:36:36','inbox1_continuous',0,0,0,NULL,'success',NULL);
+INSERT INTO sync_history VALUES(57,'2025-11-23 23:36:36','2025-11-23 23:36:37','inbox2_continuous',0,0,0,NULL,'success',NULL);
 CREATE TABLE config (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
@@ -231,8 +247,8 @@ INSERT INTO config VALUES('inbox1_email','inbox1','2025-10-29 19:14:00');
 DELETE FROM sqlite_sequence;
 INSERT INTO sqlite_sequence VALUES('notifications',64);
 INSERT INTO sqlite_sequence VALUES('notification_pairs',35);
-INSERT INTO sqlite_sequence VALUES('sync_history',45);
-INSERT INTO sqlite_sequence VALUES('stats_snapshots',22);
+INSERT INTO sqlite_sequence VALUES('sync_history',57);
+INSERT INTO sqlite_sequence VALUES('stats_snapshots',26);
 CREATE INDEX idx_notifications_reference ON notifications(reference_number);
 CREATE INDEX idx_notifications_status ON notifications(status);
 CREATE INDEX idx_notifications_date ON notifications(date_received);
