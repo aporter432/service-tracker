@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Label: Unique identifier for this launch agent -->
+    <key>Label</key>
+    <string>com.orbcomm.tracker.deploy</string>
+
+    <!-- Program and Arguments: What to run -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>{{PYTHON_PATH}}</string>
+        <string>{{DEPLOY_SCHEDULER_PATH}}</string>
+    </array>
+
+    <!-- Working Directory -->
+    <key>WorkingDirectory</key>
+    <string>{{PROJECT_DIR}}</string>
+
+    <!-- Schedule: Configurable interval (default: daily at 9:00 AM) -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>{{HOUR}}</integer>
+        <key>Minute</key>
+        <integer>{{MINUTE}}</integer>
+    </dict>
+
+    <!-- Logging -->
+    <key>StandardOutPath</key>
+    <string>{{LOG_DIR}}/deploy_scheduler_stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>{{LOG_DIR}}/deploy_scheduler_stderr.log</string>
+
+    <!-- Run even if user is not logged in -->
+    <key>RunAtLoad</key>
+    <false/>
+
+    <!-- Environment variables -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin</string>
+    </dict>
+
+    <!-- Keep job alive if it crashes -->
+    <key>KeepAlive</key>
+    <false/>
+
+    <!-- Process Type: Background daemon -->
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>
