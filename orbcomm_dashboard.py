@@ -130,6 +130,22 @@ def notifications():
     if platform_filter != "all":
         notifs = [n for n in notifs if n["platform"] == platform_filter]
 
+    # Check resolution status for Open/Continuing notifications
+    cursor = db.conn.cursor()
+    for notif in notifs:
+        if notif["status"] in ["Open", "Continuing"]:
+            cursor.execute(
+                """
+                SELECT 1 FROM notifications
+                WHERE reference_number = ? AND status = 'Resolved'
+                LIMIT 1
+            """,
+                (notif["reference_number"],),
+            )
+            notif["has_been_resolved"] = cursor.fetchone() is not None
+        else:
+            notif["has_been_resolved"] = False
+
     # Get stats for sidebar
     stats = db.get_current_stats()
 

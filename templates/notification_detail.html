@@ -12,7 +12,12 @@
     <div class="detail-card">
         <div class="detail-header">
             <span class="badge badge-{{ notification.platform|lower }}">{{ notification.platform }}</span>
+            {% if has_been_resolved and notification.status in ['Open', 'Continuing'] %}
+            <span class="badge badge-resolved">Resolved</span>
+            <span class="badge badge-info" title="Viewing historical {{ notification.status }} notification">Historical: {{ notification.status }}</span>
+            {% else %}
             <span class="badge badge-{{ notification.status|lower }}">{{ notification.status }}</span>
+            {% endif %}
             {% if notification.is_archived %}
             <span class="badge badge-archived">Archived</span>
             {% endif %}
@@ -46,7 +51,13 @@
                 </tr>
                 <tr>
                     <th>Status:</th>
-                    <td>{{ notification.status }}</td>
+                    <td>
+                        {% if has_been_resolved and notification.status in ['Open', 'Continuing'] %}
+                        <strong>Resolved</strong> <span class="text-muted">(viewing historical {{ notification.status }} notification)</span>
+                        {% else %}
+                        {{ notification.status }}
+                        {% endif %}
+                    </td>
                 </tr>
                 <tr>
                     <th>Priority:</th>
