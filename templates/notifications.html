@@ -49,12 +49,7 @@
             <div class="notif-header">
                 <span class="ref-number">{{ notif.reference_number }}</span>
                 <span class="badge badge-{{ notif.platform|lower }}">{{ notif.platform }}</span>
-                {% if notif.has_been_resolved and notif.status in ['Open', 'Continuing'] %}
-                <span class="badge badge-resolved">Resolved</span>
-                <span class="badge badge-secondary" style="font-size: 0.75em;">was {{ notif.status }}</span>
-                {% else %}
                 <span class="badge badge-{{ notif.status|lower }}">{{ notif.status }}</span>
-                {% endif %}
                 {% if notif.is_archived %}
                 <span class="badge badge-archived">Archived</span>
                 {% endif %}

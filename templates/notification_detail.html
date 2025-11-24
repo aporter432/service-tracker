@@ -106,6 +106,37 @@
         </div>
         {% endif %}
 
+        {% if timeline and timeline|length > 1 %}
+        <div class="detail-section">
+            <h3>Notification Timeline</h3>
+            <p>Full timeline for reference {{ notification.reference_number }}:</p>
+            <table class="detail-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for notif in timeline %}
+                    <tr {% if notif.id == notification.id %}style="background-color: #f0f8ff;"{% endif %}>
+                        <td>{{ notif.date_received|format_date }} {{ notif.time_received }}</td>
+                        <td><span class="badge badge-{{ notif.status|lower }}">{{ notif.status }}</span></td>
+                        <td>
+                            {% if notif.id == notification.id %}
+                                <em>Current</em>
+                            {% else %}
+                                <a href="{{ url_for('notification_detail', notif_id=notif.id) }}">View</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
         {% if paired %}
         <div class="detail-section paired-section">
             <h3>Paired Notification</h3>
