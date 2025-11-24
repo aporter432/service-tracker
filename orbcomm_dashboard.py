@@ -130,33 +130,6 @@ def notifications():
     if platform_filter != "all":
         notifs = [n for n in notifs if n["platform"] == platform_filter]
 
-    # Filter out Open/Continuing notifications if a Resolved notification exists
-    cursor = db.conn.cursor()
-    filtered_notifs = []
-    for notif in notifs:
-        if notif["status"] in ["Open", "Continuing"]:
-            # Check if this reference has been resolved
-            cursor.execute(
-                """
-                SELECT 1 FROM notifications
-                WHERE reference_number = ? AND status = 'Resolved'
-                LIMIT 1
-            """,
-                (notif["reference_number"],),
-            )
-            has_resolved = cursor.fetchone() is not None
-            # Skip this notification if it has been resolved (hide historical Open/Continuing)
-            if not has_resolved:
-                notif["has_been_resolved"] = False
-                filtered_notifs.append(notif)
-            # else: skip it - don't show resolved Open/Continuing notifications
-        else:
-            # Keep Resolved notifications
-            notif["has_been_resolved"] = False
-            filtered_notifs.append(notif)
-
-    notifs = filtered_notifs
-
     # Get stats for sidebar
     stats = db.get_current_stats()
 

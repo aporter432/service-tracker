@@ -439,6 +439,17 @@ class Database:
                 (resolved_dt.isoformat(), time_to_resolve, resolved_notif["id"]),
             )
 
+            # Mark ALL Open/Continuing notifications as Resolved (Resolved is final state)
+            cursor.execute(
+                """
+                UPDATE notifications
+                SET status = 'Resolved'
+                WHERE reference_number = ?
+                AND status IN ('Open', 'Continuing')
+            """,
+                (reference_number,),
+            )
+
             self.conn.commit()
             logger.info(f"Linked pair {reference_number}: {time_to_resolve} minutes")
             return True

@@ -12,27 +12,11 @@
     <div class="detail-card">
         <div class="detail-header">
             <span class="badge badge-{{ notification.platform|lower }}">{{ notification.platform }}</span>
-            {% if has_been_resolved and notification.status in ['Open', 'Continuing'] %}
-            <span class="badge badge-resolved">Resolved</span>
-            <span class="badge badge-info" title="Viewing historical {{ notification.status }} notification">Historical: {{ notification.status }}</span>
-            {% else %}
             <span class="badge badge-{{ notification.status|lower }}">{{ notification.status }}</span>
-            {% endif %}
             {% if notification.is_archived %}
             <span class="badge badge-archived">Archived</span>
             {% endif %}
         </div>
-
-        {% if has_been_resolved and notification.status in ['Open', 'Continuing'] %}
-        <div class="alert alert-success">
-            <strong>✅ Issue Resolved:</strong> This reference number ({{ notification.reference_number }}) has been resolved.
-            You are viewing an earlier "{{ notification.status }}" notification from {{ notification.date_received|format_date }}.
-            {% if resolved_notification %}
-            The issue was resolved on {{ resolved_notification.date_received|format_date }}.
-            <a href="{{ url_for('notification_detail', notif_id=resolved_notification.id) }}" class="link">View resolved notification →</a>
-            {% endif %}
-        </div>
-        {% endif %}
 
         <div class="detail-section">
             <h3>Basic Information</h3>
@@ -51,13 +35,7 @@
                 </tr>
                 <tr>
                     <th>Status:</th>
-                    <td>
-                        {% if has_been_resolved and notification.status in ['Open', 'Continuing'] %}
-                        <strong>Resolved</strong> <span class="text-muted">(viewing historical {{ notification.status }} notification)</span>
-                        {% else %}
-                        {{ notification.status }}
-                        {% endif %}
-                    </td>
+                    <td>{{ notification.status }}</td>
                 </tr>
                 <tr>
                     <th>Priority:</th>
@@ -103,37 +81,6 @@
         <div class="detail-section">
             <h3>Affected Services</h3>
             <p class="detail-text">{{ notification.affected_services }}</p>
-        </div>
-        {% endif %}
-
-        {% if timeline and timeline|length > 1 %}
-        <div class="detail-section">
-            <h3>Notification Timeline</h3>
-            <p>Full timeline for reference {{ notification.reference_number }}:</p>
-            <table class="detail-table">
-                <thead>
-                    <tr>
-                        <th>Time</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for notif in timeline %}
-                    <tr {% if notif.id == notification.id %}style="background-color: #f0f8ff;"{% endif %}>
-                        <td>{{ notif.date_received|format_date }} {{ notif.time_received }}</td>
-                        <td><span class="badge badge-{{ notif.status|lower }}">{{ notif.status }}</span></td>
-                        <td>
-                            {% if notif.id == notification.id %}
-                                <em>Current</em>
-                            {% else %}
-                                <a href="{{ url_for('notification_detail', notif_id=notif.id) }}">View</a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
         {% endif %}
 
