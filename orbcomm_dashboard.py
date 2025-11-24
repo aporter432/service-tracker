@@ -189,14 +189,17 @@ def notification_detail(notif_id):
     if pair_row:
         pair_dict = dict(pair_row)
         # Get the other notification in the pair
-        other_id = (
-            pair_dict["resolved_notification_id"]
-            if notification["status"] == "Open"
-            else pair_dict["open_notification_id"]
-        )
+        # Logic: Open/Continuing → show Resolved; Resolved → show Open
+        if notification["status"] in ["Open", "Continuing"]:
+            other_id = pair_dict["resolved_notification_id"]
+        else:  # status is "Resolved"
+            other_id = pair_dict["open_notification_id"]
+
         if other_id:
             cursor.execute("SELECT * FROM notifications WHERE id = ?", (other_id,))
-            paired = dict(cursor.fetchone())
+            paired_row = cursor.fetchone()
+            if paired_row:
+                paired = dict(paired_row)
 
     db.close()
 
