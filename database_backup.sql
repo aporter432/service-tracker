@@ -173,6 +173,7 @@ INSERT INTO stats_snapshots VALUES(28,'2025-11-24 15:00:07',61,3,23,12,2202.3499
 INSERT INTO stats_snapshots VALUES(29,'2025-11-25 15:00:08',62,4,58,0,2202.34999999999991,'{"IDP": 41, "OGx": 21}','{"": 62}');
 INSERT INTO stats_snapshots VALUES(30,'2025-11-26 15:00:08',62,4,58,0,2202.34999999999991,'{"IDP": 41, "OGx": 21}','{"": 62}');
 INSERT INTO stats_snapshots VALUES(31,'2025-11-27 15:00:07',62,4,58,0,2202.34999999999991,'{"IDP": 41, "OGx": 21}','{"": 62}');
+INSERT INTO stats_snapshots VALUES(32,'2025-11-28 15:00:07',62,4,58,0,2202.34999999999991,'{"IDP": 41, "OGx": 21}','{"": 62}');
 CREATE TABLE sync_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 sync_start DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -252,6 +253,8 @@ INSERT INTO sync_history VALUES(64,'2025-11-26 15:00:06','2025-11-26 15:00:07','
 INSERT INTO sync_history VALUES(65,'2025-11-26 15:00:07','2025-11-26 15:00:08','inbox2_continuous',0,0,0,NULL,'success',NULL);
 INSERT INTO sync_history VALUES(66,'2025-11-27 15:00:05','2025-11-27 15:00:06','inbox1_continuous',0,0,0,NULL,'success',NULL);
 INSERT INTO sync_history VALUES(67,'2025-11-27 15:00:06','2025-11-27 15:00:07','inbox2_continuous',0,0,0,NULL,'success',NULL);
+INSERT INTO sync_history VALUES(68,'2025-11-28 15:00:06','2025-11-28 15:00:07','inbox1_continuous',0,0,0,NULL,'success',NULL);
+INSERT INTO sync_history VALUES(69,'2025-11-28 15:00:07','2025-11-28 15:00:07','inbox2_continuous',0,0,0,NULL,'success',NULL);
 CREATE TABLE config (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
@@ -263,8 +266,8 @@ INSERT INTO config VALUES('inbox1_email','inbox1','2025-10-29 19:14:00');
 DELETE FROM sqlite_sequence;
 INSERT INTO sqlite_sequence VALUES('notifications',65);
 INSERT INTO sqlite_sequence VALUES('notification_pairs',35);
-INSERT INTO sqlite_sequence VALUES('sync_history',67);
-INSERT INTO sqlite_sequence VALUES('stats_snapshots',31);
+INSERT INTO sqlite_sequence VALUES('sync_history',69);
+INSERT INTO sqlite_sequence VALUES('stats_snapshots',32);
 CREATE INDEX idx_notifications_reference ON notifications(reference_number);
 CREATE INDEX idx_notifications_status ON notifications(status);
 CREATE INDEX idx_notifications_date ON notifications(date_received);
