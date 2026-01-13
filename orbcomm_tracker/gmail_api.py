@@ -5,10 +5,12 @@ Handles authentication and email fetching for ORBCOMM tracker
 
 import base64
 import logging
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
@@ -29,13 +31,15 @@ class GmailAPI:
             inbox_number: Inbox identifier (1 or 2)
         """
         self.inbox_number = inbox_number
-        self.config_dir = Path.home() / ".orbcomm" / f"inbox{inbox_number}"
+        # Use ORBCOMM_DATA_DIR env var for production (Render), fallback to home dir for local dev
+        data_dir = os.environ.get("ORBCOMM_DATA_DIR", str(Path.home() / ".orbcomm"))
+        self.config_dir = Path(data_dir) / f"inbox{inbox_number}"
         self.token_file = self.config_dir / "token.json"
         self.service = None
         self._authenticate()
 
     def _authenticate(self):
-        """Authenticate with Gmail API"""
+        """Authenticate with Gmail API, refreshing token if expired"""
         if not self.token_file.exists():
             raise FileNotFoundError(
                 f"Inbox {self.inbox_number} not authenticated. "
@@ -43,6 +47,16 @@ class GmailAPI:
             )
 
         creds = Credentials.from_authorized_user_file(str(self.token_file), SCOPES)
+
+        # Refresh token if expired
+        if creds.expired and creds.refresh_token:
+            logger.info(f"Refreshing expired token for inbox {self.inbox_number}")
+            creds.refresh(Request())
+            # Save refreshed token
+            with open(self.token_file, "w") as f:
+                f.write(creds.to_json())
+            logger.info(f"Token refreshed and saved for inbox {self.inbox_number}")
+
         self.service = build("gmail", "v1", credentials=creds)
         logger.info(f"Authenticated inbox {self.inbox_number}")
 

@@ -5,6 +5,7 @@ SQLite-based persistence with full CRUD operations
 
 import json
 import logging
+import os
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -19,9 +20,9 @@ class Database:
     def __init__(self, db_path: str = None):
         """Initialize database connection"""
         if db_path is None:
-            db_path = Path.home() / ".orbcomm" / "tracker.db"
-        else:
-            db_path = Path(db_path)
+            # Use DATABASE_PATH env var for production (Render), fallback to home dir for local dev
+            db_path = os.environ.get("DATABASE_PATH", str(Path.home() / ".orbcomm" / "tracker.db"))
+        db_path = Path(db_path)
 
         # Ensure directory exists
         db_path.parent.mkdir(parents=True, exist_ok=True)
