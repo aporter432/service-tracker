@@ -265,12 +265,18 @@ def api_sync():
     # API key authentication
     api_key = os.environ.get("SYNC_API_KEY")
     if api_key:
-        request_key = (
-            request.headers.get("X-API-Key") or request.json.get("api_key")
-            if request.json
-            else None
-        )
-        if request_key != api_key:
+        # Check header first, then JSON body if present
+        request_key = request.headers.get("X-API-Key")
+        if not request_key and request.json:
+            request_key = request.json.get("api_key")
+
+        # Allow same-origin requests (dashboard Sync button) without API key
+        referer = request.headers.get("Referer", "")
+        is_same_origin = request.host in referer if referer else False
+
+        if not request_key and not is_same_origin:
+            return jsonify({"success": False, "error": "Unauthorized"}), 401
+        if request_key and request_key != api_key:
             return jsonify({"success": False, "error": "Unauthorized"}), 401
 
     try:
